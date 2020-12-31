@@ -1,0 +1,19 @@
+[package]
+authors = ["Branan Riley <me@branan.info>"]
+categories = ["development-tools", "embedded"]
+description = "Helper macros for Cntrlr"
+documentation = "https://docs.rs/cntrlr-macros"
+edition = "2018"
+homepage = "https://github.com/branan/cntrlr"
+license = "AGPL-3.0-or-later"
+name = "cntrlr-macros"
+readme = "README.md"
+repository = "https://github.com/branan/cntrlr"
+version = "0.1.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0.50", features = ["full"] }
+quote = "1.0.7"

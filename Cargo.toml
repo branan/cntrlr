@@ -1,0 +1,10 @@
+cargo-features = ["resolver"]
+
+[workspace]
+resolver = "2"
+members = [
+  "cntrlr",
+  "cntrlr-build",
+  "cntrlr-macros"
+]
+exclude = ["cargo-cntrlr"]
