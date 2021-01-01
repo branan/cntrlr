@@ -1,8 +1,4 @@
 # Cntrlr - Simple, asynchronous embedded
-
-[![Crates.io](https://img.shields.io/crates/d/cntrlr)](https://crates.io/crates/cntrlr)
-[![Docs.rs](https://docs.rs/cntrlr/badge.svg)](https://docs.rs/cntrlr)
-
 Cntrlr is an all-in-one embedded platform for writing simple
 asynchronous applications on top of common hobbyist development
 boards.
@@ -11,7 +7,7 @@ boards.
 
 ### Hello World to a serial port
 
-```
+```rust
 #![no_std]
 #![no_main]
 
@@ -30,7 +26,7 @@ async fn main() -> ! {
 
 ### Blinking LED
 
-```
+```rust
 #![no_std]
 #![no_main]
 
@@ -38,6 +34,7 @@ use cntrlr::prelude::*;
 
 #[entry]
 async fn main() -> ! {
+    pin_mode(13, PinMode::Output);
     loop {
         digital_write(13, true);
         sleep(500).await;
