@@ -3,11 +3,15 @@
 
 //! Board-specific functionality for the Sparkfun Red V
 
-use crate::sync::enable_interrupts;
-use core::sync::atomic::{AtomicUsize, Ordering};
+use crate::{hw::mcu::sifive::fe310g002::Plic, sync::enable_interrupts};
+use core::{
+    ptr::write_volatile,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 pub mod digital;
 pub mod io;
+pub mod time;
 
 static CPU_FREQ: AtomicUsize = AtomicUsize::new(0);
 
@@ -51,8 +55,17 @@ pub unsafe extern "C" fn start() {}
 /// only if you are overriding Cntrlr runtime behavior.
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_board_init")]
 pub unsafe extern "C" fn init() {
-    use crate::hw::mcu::sifive::fe310g002::Plic;
     set_clock(256_000_000);
+
+    // external oscillator runs at 32.768KHz. Set up mtimecmp to fire every 1ms
+    const MTIMECMP_LO: *mut u32 = 0x0200_4000 as _;
+    const MTIMECMP_HI: *mut u32 = 0x0200_4004 as _;
+    const MTIME_LO: *mut u32 = 0x0200_BFF8 as _;
+    const MTIME_HI: *mut u32 = 0x0200_BFFC as _;
+    write_volatile(MTIME_LO, 0);
+    write_volatile(MTIME_HI, 0);
+    write_volatile(MTIMECMP_LO, 33);
+    write_volatile(MTIMECMP_HI, 0);
 
     let mut plic = Plic::get();
     plic.mask_all();
@@ -169,8 +182,6 @@ pub unsafe extern "C" fn trap_vec() {
 
 #[allow(dead_code)]
 unsafe extern "C" fn handle_trap(mcause: u32, mepc: u32, mtval: u32) {
-    use crate::hw::mcu::sifive::fe310g002::Plic;
-
     match mcause {
         0 => panic!("Misaligned Instruction at 0x{:8X}", mepc),
         1 => panic!("Instruction access fault at 0x{:8X}", mepc),
@@ -192,10 +203,7 @@ unsafe extern "C" fn handle_trap(mcause: u32, mepc: u32, mtval: u32) {
             "Store or atmoic fault of 0x{:8X} by instruction at 0x{:8X}",
             mtval, mepc
         ),
-        0x8000_0007 => {
-            // TODO: Update millis
-            panic!("Timer interrupt");
-        }
+        0x8000_0007 => time::timer_intr(),
         0x8000_000B => loop {
             let mut plic = Plic::get();
             let intr = plic.claim();

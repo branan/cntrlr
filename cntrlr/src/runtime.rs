@@ -12,6 +12,7 @@ fn panic(_: &PanicInfo) -> ! {
 }
 
 /// Default interrupt handler
+#[allow(dead_code)]
 pub extern "C" fn unused_interrupt() {}
 
 /// The default reset vector
