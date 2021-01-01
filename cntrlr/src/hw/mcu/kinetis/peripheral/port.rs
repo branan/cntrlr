@@ -10,7 +10,7 @@ use super::{
     super::{Mk20Dx128, Mk20Dx256, Mk64Fx512, Mk66Fx1M0, Mkl26Z64},
     sim::{Gate, Peripheral},
 };
-use crate::{register::Register, sync::Flag};
+use crate::{digital::Pull, register::Register, sync::Flag};
 use bit_field::BitField;
 use core::{default::Default, marker::PhantomData, sync::atomic::Ordering};
 
@@ -49,6 +49,16 @@ impl<M, const N: usize> Port<M, N> {
 pub struct Pin<'a, M, const N: usize, const P: usize> {
     reg: &'static mut Register<u32>,
     port: &'a Port<M, N>,
+}
+
+impl<M, const N: usize, const P: usize> Pin<'_, M, N, P> {
+    /// Use this in as a GPIO
+    pub fn into_gpio(self) -> Gpio<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 1);
+        });
+        Gpio(self)
+    }
 }
 
 impl<M, const N: usize, const P: usize> Drop for Pin<'_, M, N, P> {
@@ -483,6 +493,58 @@ pub struct UartRx<P>(P);
 /// A pin which is configured as a UART transmitter
 pub struct UartTx<P>(P);
 
+/// A pin which is configured as a GPIO
+pub struct Gpio<P>(P);
+
+impl<M, const N: usize, const P: usize> Gpio<Pin<'_, M, N, P>> {
+    /// Set this pin as high or low
+    pub fn write(&mut self, value: bool) {
+        unsafe {
+            let pdor: &mut Register<u32> = &mut *bitband_address(0x400F_F000 + 0x40 * N, P);
+            pdor.write(value.into());
+        }
+    }
+
+    /// Read the status of this pin
+    pub fn read(&self) -> bool {
+        unsafe {
+            let pdir: &Register<u32> = &*bitband_address(0x400F_F010 + 0x40 * N, P);
+            pdir.read() != 0
+        }
+    }
+
+    /// Set whether this pin is an output or an input
+    pub fn set_output(&mut self, output: bool) {
+        unsafe {
+            let pddr: &mut Register<u32> = &mut *bitband_address(0x400F_F014 + 0x40 * N, P);
+            pddr.write(output.into());
+        }
+    }
+
+    /// Set pullup/down resistors on this pin
+    pub fn set_pull(&mut self, pull: Option<Pull>) {
+        self.0.reg.update(|pcr| {
+            match pull {
+                Some(pull) => {
+                    match pull {
+                        Pull::Up => pcr.set_bit(0, true),
+                        Pull::Down => pcr.set_bit(0, false),
+                    };
+                    pcr.set_bit(1, true)
+                }
+                None => pcr.set_bit(1, false),
+            };
+        });
+    }
+
+    /// Set whether this pin is open-drain.
+    pub fn set_open_drain(&mut self, open_drain: bool) {
+        self.0.reg.update(|pcr| {
+            pcr.set_bit(5, open_drain);
+        });
+    }
+}
+
 impl super::uart::UartRx<Mk20Dx128, 0> for UartRx<Pin<'_, Mk20Dx128, 1, 16>> {}
 impl super::uart::UartRx<Mk20Dx128, 1> for UartRx<Pin<'_, Mk20Dx128, 2, 3>> {}
 impl super::uart::UartRx<Mk20Dx128, 2> for UartRx<Pin<'_, Mk20Dx128, 3, 2>> {}
@@ -851,4 +913,8 @@ unsafe impl Peripheral<Mkl26Z64> for Port<Mkl26Z64, 4> {
             _mcu: PhantomData,
         }
     }
+}
+
+unsafe fn bitband_address<T>(addr: usize, bit: usize) -> *mut T {
+    (0x4200_0000 + (addr - 0x4000_0000) * 32 + bit * 4) as _
 }

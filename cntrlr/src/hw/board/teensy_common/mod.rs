@@ -3,6 +3,7 @@
 
 //! Common board functionality for the Teensy 3.x series
 
+pub mod digital;
 pub mod io;
 
 const FLASH_SECURITY: u8 = 0xDE;

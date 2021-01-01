@@ -32,6 +32,7 @@
 
 extern crate alloc;
 
+pub mod digital;
 pub mod hw;
 pub mod io;
 pub mod sync;
@@ -44,6 +45,7 @@ pub mod macros {
 
 /// Common functions and traits for using Cntrlr
 pub mod prelude {
+    pub use crate::digital::{PinMode, Pull};
     pub use crate::io::{Read, ReadExt, Serial, Write, WriteExt};
     use cntrlr_macros::prelude_fn;
 
@@ -67,6 +69,9 @@ pub mod prelude {
 
     #[prelude_fn(teensy_35)]
     pub use crate::io::serial_6;
+
+    #[prelude_fn(red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
+    pub use crate::digital::{digital_read, digital_write, pin_mode};
 
     pub use crate::macros::entry;
 }

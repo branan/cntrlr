@@ -13,7 +13,7 @@ use syn::{
     punctuated::Punctuated,
     spanned::Spanned,
     token::Comma,
-    Ident, ItemFn, ItemUse, ReturnType, Type,
+    FnArg, Ident, ItemFn, ItemUse, Pat, ReturnType, Type,
 };
 
 struct IdentList {
@@ -79,6 +79,19 @@ pub fn board_fn(args: TokenStream, input: TokenStream) -> TokenStream {
         })
         .collect::<Vec<_>>();
 
+    // This isn't super robust, but good enough for what we need to do.
+    let args = sig
+        .inputs
+        .iter()
+        .filter_map(|input| match input {
+            FnArg::Receiver(_) => None,
+            FnArg::Typed(pat) => match *pat.pat {
+                Pat::Ident(ref ident) => Some(ident.clone()),
+                _ => None,
+            },
+        })
+        .collect::<Vec<_>>();
+
     let impls = boards
         .boards
         .iter()
@@ -88,7 +101,7 @@ pub fn board_fn(args: TokenStream, input: TokenStream) -> TokenStream {
             quote!(
             #[cfg(board = #board_name)]
             {
-                crate::hw::board::#board::#module::#fn_name()
+                crate::hw::board::#board::#module::#fn_name(#(#args),*)
             }
             )
         })
