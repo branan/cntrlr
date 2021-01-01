@@ -30,7 +30,7 @@ const FLASH_OPTIONS: u8 = 0xF9;
         board = "teensy_36",
         board = "teensy_lc"
     ),
-    export_name = "__cntrl_flash_configuration"
+    export_name = "__cntrlr_flash_configuration"
 )]
 pub static FLASH_CONFIGURATION: [u8; 16] = [
     0xFF,
