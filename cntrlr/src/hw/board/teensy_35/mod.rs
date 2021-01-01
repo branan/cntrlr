@@ -7,6 +7,7 @@ use core::sync::atomic::AtomicUsize;
 
 pub mod digital;
 pub mod io;
+pub mod time;
 
 static CPU_FREQ: AtomicUsize = AtomicUsize::new(0);
 static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
@@ -106,4 +107,27 @@ pub static INTERRUPTS: [unsafe extern "C" fn(); 86] = [
     unused_interrupt,  // 083
     unused_interrupt,  // 084
     unused_interrupt,  // 085
+];
+
+/// The Teensy 3.5 exception table
+///
+/// This will automatically be included as the standard interrupt
+/// table when this board is selected.
+#[cfg_attr(board = "teensy_35", link_section = ".__CNTRLR_EXCEPTIONS")]
+#[cfg_attr(board = "teensy_35", export_name = "__cntrlr_exceptions")]
+pub static ARM_EXCEPTIONS: [unsafe extern "C" fn(); 14] = [
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    time::systick_intr,
 ];

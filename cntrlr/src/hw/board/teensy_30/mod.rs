@@ -3,10 +3,17 @@
 
 //! Board-specific functionality for the Teensy 3.0
 
-use core::sync::atomic::{AtomicUsize, Ordering};
+use crate::hw::mcu::kinetis::mk20dx128::{
+    Clock, Mcg, Osc, OscRange, PeripheralClockSource, Sim, SysTick, UsbClockSource, Watchdog,
+};
+use core::{
+    ptr::write_volatile,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 pub mod digital;
 pub mod io;
+pub mod time;
 
 static CPU_FREQ: AtomicUsize = AtomicUsize::new(0);
 static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
@@ -15,7 +22,6 @@ static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
 ///
 /// Valid values are 48, 32, 24, 16, 12, 8, 6, 4, or 3 MHz
 pub fn set_clock(clock: usize) {
-    use crate::hw::mcu::kinetis::mk20dx128::{Clock, Mcg, Osc, OscRange, Sim};
     let (core, bus, flash, usb_num, usb_den, pll_num, pll_den) = match clock {
         48_000_000 => (1, 1, 2, 1, 1, 24, 8),
         32_000_000 => (3, 3, 3, 1, 2, 24, 4),
@@ -52,7 +58,17 @@ pub fn set_clock(clock: usize) {
     // Finally, re-enable the PLL at our preferred speed
     fbe.enable_pll(pll_num, pll_den).use_pll();
 
-    // TODO: Setup systick timer
+    // Switch peripherals over to the PLL
+    sim.set_usb_source(UsbClockSource::PllFll);
+    sim.set_peripheral_source(PeripheralClockSource::Pll);
+
+    // Reset SysTick for new clock rate.
+    let mut systick = SysTick::get();
+    systick.enable(false);
+    let reload = (clock / 1000) - 1;
+    systick.set_reload_value(reload as u32);
+    systick.set_current_value(0);
+    systick.enable(true);
 }
 
 /// Early startup for the Teensy 3.0 board
@@ -64,7 +80,6 @@ pub fn set_clock(clock: usize) {
 /// only if you are overriding Cntrlr runtime behavior.
 #[cfg_attr(board = "teensy_30", export_name = "__cntrlr_board_start")]
 pub unsafe extern "C" fn start() {
-    use crate::hw::mcu::kinetis::mk20dx128::Watchdog;
     Watchdog::get().disable();
 }
 
@@ -81,25 +96,19 @@ pub unsafe extern "C" fn init() {
     // Switch systick to core clock and enable the systick
     // interrupt. The rest of the systick configuration happens as
     // part of setting the clock.
-    // SysTick::get().use_core_clock(true);
-    // SysTick::get().enable_interrupt(true);
+    SysTick::get().use_core_clock(true);
+    SysTick::get().enable_interrupt(true);
 
     set_clock(48_000_000);
 
+    /// TODO: Create an NVIC peripheral
     const NVIC_ISER: *mut u32 = 0xE000_E100 as *mut _;
-
     for intr in &[16, 18, 20] {
         let reg = intr / 32;
         let bit = intr % 32;
 
-        core::ptr::write_volatile(NVIC_ISER.add(reg), 1 << bit);
+        write_volatile(NVIC_ISER.add(reg), 1 << bit);
     }
-
-    // Enable bus + usage faults
-    const SHCSR: *mut u32 = 0xE000_ED24 as *mut _;
-    let mut shcsr = core::ptr::read_volatile(SHCSR);
-    shcsr |= 0x60000;
-    core::ptr::write_volatile(SHCSR, shcsr);
 }
 
 use crate::runtime::unused_interrupt;
@@ -157,4 +166,27 @@ pub static INTERRUPTS: [unsafe extern "C" fn(); 46] = [
     unused_interrupt,  // 043
     unused_interrupt,  // 044
     unused_interrupt,  // 045
+];
+
+/// The Teensy 3.0 exception table
+///
+/// This will automatically be included as the standard interrupt
+/// table when this board is selected.
+#[cfg_attr(board = "teensy_30", link_section = ".__CNTRLR_EXCEPTIONS")]
+#[cfg_attr(board = "teensy_30", export_name = "__cntrlr_exceptions")]
+pub static ARM_EXCEPTIONS: [unsafe extern "C" fn(); 14] = [
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    unused_interrupt,
+    time::systick_intr,
 ];

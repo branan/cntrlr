@@ -37,6 +37,7 @@ pub mod hw;
 pub mod io;
 pub mod sync;
 pub mod task;
+pub mod time;
 
 /// Support Macros
 pub mod macros {
@@ -48,6 +49,9 @@ pub mod prelude {
     pub use crate::digital::{PinMode, Pull};
     pub use crate::io::{Read, ReadExt, Serial, Write, WriteExt};
     use cntrlr_macros::prelude_fn;
+
+    #[prelude_fn(red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
+    pub use crate::digital::{digital_read, digital_write, pin_mode};
 
     #[prelude_fn(red_v)]
     pub use crate::io::pc_serial;
@@ -71,7 +75,7 @@ pub mod prelude {
     pub use crate::io::serial_6;
 
     #[prelude_fn(red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
-    pub use crate::digital::{digital_read, digital_write, pin_mode};
+    pub use crate::time::{millis, sleep_millis};
 
     pub use crate::macros::entry;
 }

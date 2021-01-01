@@ -11,8 +11,8 @@ async fn main() -> ! {
     pin_mode(2, PinMode::Output);
     loop {
         digital_write(2, true);
-        // TODO: delay
+        sleep_millis(500).await;
         digital_write(2, false);
-        // TODO: delay
+        sleep_millis(500).await;
     }
 }

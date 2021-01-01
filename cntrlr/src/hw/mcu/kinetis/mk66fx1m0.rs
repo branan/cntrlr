@@ -9,6 +9,7 @@
 pub use super::peripheral::mcg::{Clock, Mcg, OscRange}; // TODO: MK66 has a different MCG
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
+pub use super::peripheral::systick::SysTick;
 pub use super::peripheral::wdog::Watchdog;
 
 /// A Pin

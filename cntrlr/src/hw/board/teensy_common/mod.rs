@@ -5,6 +5,7 @@
 
 pub mod digital;
 pub mod io;
+pub mod time;
 
 const FLASH_SECURITY: u8 = 0xDE;
 const FLASH_OPTIONS: u8 = 0xF9;

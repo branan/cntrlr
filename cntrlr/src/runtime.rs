@@ -61,23 +61,3 @@ unsafe fn init_bss(bss: *mut u8, bss_end: *mut u8) {
 unsafe fn init_heap(brk: *mut u8) {
     crate::allocator::init(brk);
 }
-
-#[cfg_attr(target_arch = "arm", link_section = ".__CNTRLR_EXCEPTIONS")]
-#[cfg_attr(target_arch = "arm", export_name = "__cntrlr_exceptions")]
-#[allow(dead_code)]
-pub static ARM_EXCEPTIONS: [unsafe extern "C" fn(); 14] = [
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-    unused_interrupt,
-];
