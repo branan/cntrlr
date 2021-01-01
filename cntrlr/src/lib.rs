@@ -24,7 +24,6 @@
     cfg_target_has_atomic,
     future_poll_fn,
     generic_associated_types,
-    min_const_generics,
     naked_functions,
     never_type,
     type_alias_impl_trait
