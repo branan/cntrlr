@@ -3,6 +3,7 @@
 //! ```
 //! use cntrlr::prelude::*;
 //! use core::futures::pending;
+//!
 //! #[entry]
 //! async fn main() -> ! {
 //!    serial_1().enable(9600);
