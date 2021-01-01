@@ -12,8 +12,10 @@ use core::{marker::PhantomData, sync::atomic::Ordering};
 /// This trait indicates that the implementing peripheral handle is
 /// clock-gated in the SIM.
 pub unsafe trait Peripheral<T> {
+    /// The clock gate that controls this peripheral
     const GATE: (usize, usize);
 
+    /// Get the instance of this peripheral, gated by `gate`.
     unsafe fn new(gate: Gate) -> Self;
 }
 
@@ -42,15 +44,23 @@ pub struct Sim<M> {
     _mcu: PhantomData<M>,
 }
 
+/// The clock used for USB
 #[derive(PartialEq)]
 pub enum UsbClockSource {
+    /// An External USB clock
     UsbClkIn,
+
+    /// The enebled PLL or FLL
     PllFll,
 }
 
+/// The clock used for certain peripherals
 #[derive(PartialEq)]
 pub enum PeripheralClockSource {
+    /// The FLL
     Fll,
+
+    /// The PLL
     Pll,
 }
 
@@ -137,6 +147,9 @@ impl<M> Drop for Sim<M> {
     }
 }
 
+/// A handle to an enabled clock gate.
+///
+/// This disables the held clock gate when it is dropped.
 pub struct Gate(*mut u32);
 
 unsafe impl Send for Gate {}

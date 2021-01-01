@@ -1,3 +1,5 @@
+//! Board-specific functionality for the Teensy 3.0
+
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub mod digital;
@@ -6,6 +8,9 @@ pub mod io;
 static CPU_FREQ: AtomicUsize = AtomicUsize::new(0);
 static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
 
+/// Set the clock for this board, in Hz.
+///
+/// Valid values are 48, 32, 24, 16, 12, 8, 6, 4, or 3 MHz
 pub fn set_clock(clock: usize) {
     use crate::hw::mcu::kinetis::mk20dx128::{Clock, Mcg, Osc, OscRange, Sim};
     let (core, bus, flash, usb_num, usb_den, pll_num, pll_den) = match clock {

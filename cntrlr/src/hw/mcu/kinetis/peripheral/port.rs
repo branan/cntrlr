@@ -1,3 +1,8 @@
+//! Ports and Pins
+//!
+//! In the Kinetis familiy, the port module manges I/O pins and which
+//! peripherals they are assigned to.
+
 use super::{
     super::{Mk20Dx128, Mk20Dx256, Mk64Fx512, Mk66Fx1M0, Mkl26Z64},
     sim::{Gate, Peripheral},
@@ -20,6 +25,9 @@ unsafe impl<M, const N: usize> Send for Port<M, N> {}
 unsafe impl<M, const N: usize> Sync for Port<M, N> {}
 
 impl<M, const N: usize> Port<M, N> {
+    /// Get a pin from this port
+    ///
+    /// Returns `None` if the pin is already in use
     pub fn pin<const P: usize>(&self) -> Option<Pin<M, N, P>> {
         unsafe {
             if P >= 32 || self.pins[P].swap(true, Ordering::Acquire) {
@@ -34,6 +42,7 @@ impl<M, const N: usize> Port<M, N> {
     }
 }
 
+/// A pin from a port
 pub struct Pin<'a, M, const N: usize, const P: usize> {
     reg: &'static mut Register<u32>,
     port: &'a Port<M, N>,

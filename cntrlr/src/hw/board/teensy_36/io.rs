@@ -1,3 +1,5 @@
+//! IO functinoality specific to the Teensy 3.6 board
+
 use crate::{
     hw::{
         board::teensy_common::io::{Serial, SerialError},
@@ -12,15 +14,34 @@ use crate::{
 };
 use core::{ptr::write_volatile, sync::atomic::Ordering};
 
+/// The pin used to recieve for serial 1
 pub type Serial1Rx = UartRx<Pin<'static, 1, 16>>;
+
+/// The pin used to transmit for serial 1
 pub type Serial1Tx = UartTx<Pin<'static, 1, 17>>;
+
+/// The pin used to recieve for serial 2
 pub type Serial2Rx = UartRx<Pin<'static, 2, 3>>;
+
+/// The pin used to transmit for serial 2
 pub type Serial2Tx = UartTx<Pin<'static, 2, 4>>;
+
+/// The pin used to recieve for serial 3
 pub type Serial3Rx = UartRx<Pin<'static, 3, 2>>;
+
+/// The pin used to transmit for serial 3
 pub type Serial3Tx = UartTx<Pin<'static, 3, 3>>;
+
+/// The pin used to recieve for serial 4
 pub type Serial4Rx = UartRx<Pin<'static, 1, 10>>;
+
+/// The pin used to transmit for serial 4
 pub type Serial4Tx = UartTx<Pin<'static, 1, 11>>;
+
+/// The pin used to recieve for serial 5
 pub type Serial5Rx = UartRx<Pin<'static, 4, 25>>;
+
+/// The pin used to transmit for serial 5
 pub type Serial5Tx = UartTx<Pin<'static, 4, 24>>;
 
 impl io::Serial for Serial<Mk66Fx1M0, Serial1Tx, Serial1Rx, 0> {
@@ -178,26 +199,31 @@ impl io::Serial for Serial<Mk66Fx1M0, Serial5Tx, Serial5Rx, 4> {
     }
 }
 
+/// The first hardware serial port
 pub fn serial_1() -> MutexGuard<'static, Serial<Mk66Fx1M0, Serial1Tx, Serial1Rx, 0>> {
     static SERIAL: Mutex<Serial<Mk66Fx1M0, Serial1Tx, Serial1Rx, 0>> = Mutex::new(Serial::new());
     SERIAL.lock()
 }
 
+/// The second hardware serial port
 pub fn serial_2() -> MutexGuard<'static, Serial<Mk66Fx1M0, Serial2Tx, Serial2Rx, 1>> {
     static SERIAL: Mutex<Serial<Mk66Fx1M0, Serial2Tx, Serial2Rx, 1>> = Mutex::new(Serial::new());
     SERIAL.lock()
 }
 
+/// The third hardware serial port
 pub fn serial_3() -> MutexGuard<'static, Serial<Mk66Fx1M0, Serial3Tx, Serial3Rx, 2>> {
     static SERIAL: Mutex<Serial<Mk66Fx1M0, Serial3Tx, Serial3Rx, 2>> = Mutex::new(Serial::new());
     SERIAL.lock()
 }
 
+/// The fourth hardware serial port
 pub fn serial_4() -> MutexGuard<'static, Serial<Mk66Fx1M0, Serial4Tx, Serial4Rx, 3>> {
     static SERIAL: Mutex<Serial<Mk66Fx1M0, Serial4Tx, Serial4Rx, 3>> = Mutex::new(Serial::new());
     SERIAL.lock()
 }
 
+/// The fifth hardware serial port
 pub fn serial_5() -> MutexGuard<'static, Serial<Mk66Fx1M0, Serial5Tx, Serial5Rx, 4>> {
     static SERIAL: Mutex<Serial<Mk66Fx1M0, Serial5Tx, Serial5Rx, 4>> = Mutex::new(Serial::new());
     SERIAL.lock()
@@ -209,6 +235,7 @@ static SERIAL_3_WAKERS: WakerSet = WakerSet::new();
 static SERIAL_4_WAKERS: WakerSet = WakerSet::new();
 static SERIAL_5_WAKERS: WakerSet = WakerSet::new();
 
+/// The interrupt function for serial 1
 pub extern "C" fn serial_1_intr() {
     unsafe {
         const UART_TX_INTR: *mut u8 = bitband_address(0x4006_A003, 7);
@@ -221,6 +248,7 @@ pub extern "C" fn serial_1_intr() {
     }
 }
 
+/// The interrupt function for serial 2
 pub extern "C" fn serial_2_intr() {
     unsafe {
         const UART_TX_INTR: *mut u8 = bitband_address(0x4006_B003, 7);
@@ -233,6 +261,7 @@ pub extern "C" fn serial_2_intr() {
     }
 }
 
+/// The interrupt function for serial 3
 pub extern "C" fn serial_3_intr() {
     unsafe {
         const UART_TX_INTR: *mut u8 = bitband_address(0x4006_C003, 7);
@@ -245,6 +274,7 @@ pub extern "C" fn serial_3_intr() {
     }
 }
 
+/// The interrupt function for serial 4
 pub extern "C" fn serial_4_intr() {
     unsafe {
         const UART_TX_INTR: *mut u8 = bitband_address(0x4006_D003, 7);
@@ -257,6 +287,7 @@ pub extern "C" fn serial_4_intr() {
     }
 }
 
+/// The interrupt function for serial 5
 pub extern "C" fn serial_5_intr() {
     unsafe {
         const UART_TX_INTR: *mut u8 = bitband_address(0x400E_A003, 7);

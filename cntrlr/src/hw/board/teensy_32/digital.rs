@@ -1,3 +1,5 @@
+//! Digital pin support specific to the Teensy 3.2
+
 use crate::{
     hw::mcu::kinetis::mk20dx256::{Port, Sim},
     sync::Once,

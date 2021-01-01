@@ -549,15 +549,12 @@ fn main() -> Result<()> {
         .ok_or(anyhow!("Board not specified"))?;
 
     if board_name == "help" {
-        println!("arduino_uno");
+        println!("red_v");
         println!("teensy_30");
         println!("teensy_32");
         println!("teensy_35");
         println!("teensy_36");
-        println!("teensy_40");
-        println!("teensy_41");
         println!("teensy_lc");
-        println!("red_v");
         return Ok(());
     }
 

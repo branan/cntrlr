@@ -1,3 +1,5 @@
+//! Digital pin support specific to the Teensy LC
+
 use crate::{
     hw::mcu::kinetis::mkl26z64::{Port, Sim},
     sync::Once,

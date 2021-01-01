@@ -1,3 +1,5 @@
+//! Digital pin support for the Teensy 3.5
+
 use crate::{
     hw::mcu::kinetis::mk64fx512::{Port, Sim},
     sync::Once,

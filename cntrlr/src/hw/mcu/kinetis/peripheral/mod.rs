@@ -1,3 +1,5 @@
+//! Shared peripherals for Kinetis family microcontrollers.
+
 pub mod mcg;
 pub mod osc;
 pub mod port;

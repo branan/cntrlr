@@ -1,3 +1,8 @@
+//! SPI and QSPI
+//!
+//! On the FE310 series, the SPI communications and QSPI memory
+//! devices provide identical interfaces.
+
 use super::super::Fe310G002;
 use crate::{
     register::{Register, Reserved},
@@ -31,6 +36,7 @@ struct SpiRegs {
     ip: Register<u32>,
 }
 
+/// An SPI interface
 pub struct Spi<M, T, R, const N: usize> {
     regs: &'static mut SpiRegs,
     _tx: T,
@@ -41,6 +47,9 @@ pub struct Spi<M, T, R, const N: usize> {
 static LOCKS: [Flag; 3] = [Flag::new(false), Flag::new(false), Flag::new(false)];
 
 impl Spi<Fe310G002, (), (), 0> {
+    /// Get SPI instance 0
+    ///
+    /// Instance 0 is the QSPI flash controller.
     pub fn get() -> Self {
         unsafe { Self::do_get(0x1001_4000) }
     }
@@ -59,7 +68,11 @@ impl<M, const N: usize> Spi<M, (), (), N> {
         }
     }
 
-    pub fn set_divider(&mut self, div: usize) {
+    /// Set the SPI divisor
+    ///
+    /// The SPI is clocked at `CPU_FREQ / div`. The divisor must be an
+    /// even number between 2 and 8192.
+    pub fn set_divisor(&mut self, div: usize) {
         assert!(div % 2 == 0 && div >= 2 && div <= 8192);
         self.regs.sckdiv.write((div / 2 - 1) as u32);
     }

@@ -1,3 +1,5 @@
+//! IO functionality shared between the various Teensy 3.x boards
+
 use crate::{
     hw::mcu::kinetis::peripheral::uart::{Uart, UartRx, UartTx},
     io,
@@ -8,13 +10,20 @@ use core::{
     task::Poll,
 };
 
+/// An error from a serial instance
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum SerialError {
+    /// The serial port cannot be read or written because it is disabled
     NotEnabled,
+
+    /// The serial port cannot be enabled because its TX or RX pin is in use
     PinInUse,
 }
 
+/// A serial instance
+///
+/// This wraps a UART and provides application-level functionality.
 pub struct Serial<M, T, R, const N: usize>(
     pub(crate) Option<Uart<M, T, R, N>>,
     pub(crate) Option<&'static WakerSet>,
@@ -112,6 +121,7 @@ where
 }
 
 impl<M, T, R, const N: usize> Serial<M, T, R, N> {
+    /// Create a new instance of a serial port, in a disabled state.
     pub const fn new() -> Self {
         Self(None, None)
     }

@@ -1,3 +1,5 @@
+//! Async task support for Cntrlr
+
 use crate::sync::without_interrupts;
 use alloc::{boxed::Box, vec::Vec};
 use core::{
@@ -14,16 +16,19 @@ struct Task {
     future: Pin<Box<dyn Future<Output = !>>>,
 }
 
+/// Task Executor
 #[derive(Default)]
 pub struct Executor {
     tasks: Vec<Task>,
 }
 
 impl Executor {
+    /// Create a new Executor
     pub fn new() -> Self {
         Default::default()
     }
 
+    /// Add a new task to this Executor
     pub fn add_task<F>(&mut self, task: F)
     where
         F: Future<Output = !> + 'static,
@@ -35,6 +40,7 @@ impl Executor {
         self.tasks.push(task)
     }
 
+    /// Hand control off to the Executor
     pub fn run(&mut self) -> ! {
         loop {
             for task in &mut self.tasks {
@@ -49,16 +55,23 @@ impl Executor {
     }
 }
 
+/// Interrupt-safe waker management
+///
+/// This struct controls access to the underlying list of wakers using
+/// critical sections. This is necessary since tpically a Cntrlr mutex
+/// cannot be used from an interrupt handler.
 pub struct WakerSet(UnsafeCell<Vec<Waker>>);
 
 unsafe impl Send for WakerSet {}
 unsafe impl Sync for WakerSet {}
 
 impl WakerSet {
+    /// Create a new WakerSet
     pub const fn new() -> Self {
         Self(UnsafeCell::new(Vec::new()))
     }
 
+    /// Add a waker to this WakerSet
     pub fn add(&self, waker: Waker) {
         unsafe {
             without_interrupts(|| {
@@ -67,6 +80,7 @@ impl WakerSet {
         }
     }
 
+    /// Wake all tasks blocked on this set, and clear the set
     pub fn wake(&self) {
         unsafe {
             without_interrupts(|| {

@@ -1,3 +1,5 @@
+//! The UART
+
 use super::super::Fe310G002;
 use crate::{register::Register, sync::Flag};
 use bit_field::BitField;
@@ -14,6 +16,7 @@ struct UartRegs {
     div: Register<u32>,
 }
 
+/// A UART
 pub struct Uart<M, T, R, const N: usize> {
     regs: &'static mut UartRegs,
     tx: T,
@@ -21,18 +24,23 @@ pub struct Uart<M, T, R, const N: usize> {
     mcu: PhantomData<M>,
 }
 
+/// A GPIO pin which can be used as a UART tansmit pin
 pub trait UartTx<M, const N: usize>: Unpin {}
+
+/// A GPIO pin which can be used as a UART ecieve pin
 pub trait UartRx<M, const N: usize>: Unpin {}
 
 static LOCKS: [Flag; 2] = [Flag::new(false), Flag::new(false)];
 
 impl Uart<Fe310G002, (), (), 0> {
+    /// Get UART instance 0
     pub fn get() -> Self {
         unsafe { Self::do_get(0x1001_3000) }
     }
 }
 
 impl Uart<Fe310G002, (), (), 1> {
+    /// Get UARt instance 1
     pub fn get() -> Self {
         unsafe { Self::do_get(0x1002_3000) }
     }
@@ -52,6 +60,10 @@ impl<M, const N: usize> Uart<M, (), (), N> {
         }
     }
 
+    /// Set the UART divisor
+    ///
+    /// The Uart is clocked at CPU_FREQ/div. If the UART is used as a
+    /// reciever, this value must be at least 16.
     pub fn set_divisor(&mut self, div: usize) {
         assert!(div >= 1);
         self.regs.div.write(div as u32 - 1);
@@ -59,6 +71,7 @@ impl<M, const N: usize> Uart<M, (), (), N> {
 }
 
 impl<M, T, const N: usize> Uart<M, T, (), N> {
+    /// Enable this UART as a reciever
     pub fn enable_rx<R: UartRx<M, N>>(self, rx: R) -> Uart<M, T, R, N> {
         self.regs.txctrl.update(|rxctrl| {
             rxctrl.set_bit(0, true);
@@ -73,6 +86,7 @@ impl<M, T, const N: usize> Uart<M, T, (), N> {
 }
 
 impl<M, R, const N: usize> Uart<M, (), R, N> {
+    /// Enable this UART as a transmitter
     pub fn enable_tx<T: UartTx<M, N>>(self, tx: T) -> Uart<M, T, R, N> {
         self.regs.txctrl.update(|txctrl| {
             txctrl.set_bit(0, true);
@@ -87,6 +101,9 @@ impl<M, R, const N: usize> Uart<M, (), R, N> {
 }
 
 impl<M, T, R: UartRx<M, N>, const N: usize> Uart<M, T, R, N> {
+    /// Read a byte from the UART.
+    ///
+    /// Retuns `None` if no data is available to be read
     pub fn read_data(&mut self) -> Option<u8> {
         let data = self.regs.rxdata.read();
         if data.get_bit(31) {
@@ -96,6 +113,8 @@ impl<M, T, R: UartRx<M, N>, const N: usize> Uart<M, T, R, N> {
         }
     }
 
+    /// Enable the UART to interrupt the CPU when the recieve FIFO is
+    /// above the watermark.
     pub fn enable_rx_intr(&mut self) {
         self.regs.ie.update(|ie| {
             ie.set_bit(1, true);
@@ -104,6 +123,9 @@ impl<M, T, R: UartRx<M, N>, const N: usize> Uart<M, T, R, N> {
 }
 
 impl<M, T: UartTx<M, N>, R, const N: usize> Uart<M, T, R, N> {
+    /// Write a byte to the UART
+    ///
+    /// Returns `None` if the byte cannot be written
     pub fn write_data(&mut self, data: u8) -> Option<()> {
         if self.regs.txdata.read().get_bit(31) {
             None
@@ -113,6 +135,8 @@ impl<M, T: UartTx<M, N>, R, const N: usize> Uart<M, T, R, N> {
         }
     }
 
+    /// Enable the UART to interrupt the CPU when the transmit FIFO is
+    /// below the watermark.
     pub fn enable_tx_intr(&mut self) {
         self.regs.ie.update(|ie| {
             ie.set_bit(0, true);
@@ -121,6 +145,8 @@ impl<M, T: UartTx<M, N>, R, const N: usize> Uart<M, T, R, N> {
 }
 
 impl<M, T, R, const N: usize> Uart<M, T, R, N> {
+    /// Set the FIFO interrupt watermarks. Both the TX and RX
+    /// watermarks must be in the range `0..8`.
     pub fn set_watermarks(&mut self, tx: u32, rx: u32) {
         assert!(tx <= 7);
         assert!(rx <= 7);

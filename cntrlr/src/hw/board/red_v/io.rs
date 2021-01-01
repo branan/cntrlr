@@ -1,3 +1,5 @@
+//! IO functionality specific to the Sparkfun Red V board.
+
 use crate::{
     hw::mcu::sifive::{
         fe310g002::{Pin, Uart, UartRx, UartTx},
@@ -14,14 +16,23 @@ use core::{
     task::Poll,
 };
 
+/// An error from a serial interface
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum SerialError {
+    /// The serial port cannot be read or written because it is disabled
     NotEnabled,
+
+    /// The serial port cannot be enabled because its TX or RX pin is in use
     PinInUse,
+
+    /// The serial port cannot be enabled because the selected baud rate is invalid
     InvalidBaud,
 }
 
+/// A serial interface
+///
+/// This wraps a UART and provides application-level functionality.
 pub struct Serial<T, R, const N: usize>(Option<Uart<T, R, N>>, Option<&'static WakerSet>);
 
 impl<T, R, const N: usize> Read for Serial<T, R, N>
@@ -104,9 +115,16 @@ where
     }
 }
 
+/// The pin used to recieve for serial 1
 pub type Serial1Rx = UartRx<Pin<'static, 0, 16>>;
+
+/// The pin used to transmit for serial 1
 pub type Serial1Tx = UartTx<Pin<'static, 0, 17>>;
+
+/// The pin used to recieve for serial 2
 pub type Serial2Rx = UartRx<Pin<'static, 0, 23>>;
+
+/// The pin used to transmit for serial 2
 pub type Serial2Tx = UartTx<Pin<'static, 0, 18>>;
 
 impl io::Serial for Serial<Serial1Tx, Serial1Rx, 0> {
@@ -173,15 +191,28 @@ impl io::Serial for Serial<Serial2Tx, Serial2Rx, 1> {
     }
 }
 
+/// The serial connection to a host PC
+///
+/// On this board, this is an alias for [`serial_1`]. If you intend to
+/// use the serial port to communicate with outside hardware via pins
+/// 0 and 1, you should prefer to use [`serial_1`] for compatibility
+/// with board which differentiate those serial ports.
 pub fn pc_serial() -> MutexGuard<'static, Serial<Serial1Tx, Serial1Rx, 0>> {
     serial_1()
 }
 
+/// The first hardware serial port
+///
+/// On this board, this is an alias for [`pc_serial`]. If you intend
+/// to use the serial port to communicate with a hose PC, you should
+/// prefer to use [`pc_serial`] for compatibility with boards which
+/// differentiate those serial ports.
 pub fn serial_1() -> MutexGuard<'static, Serial<Serial1Tx, Serial1Rx, 0>> {
     static SERIAL: Mutex<Serial<Serial1Tx, Serial1Rx, 0>> = Mutex::new(Serial(None, None));
     SERIAL.lock()
 }
 
+/// The second hardware serial port
 pub fn serial_2() -> MutexGuard<'static, Serial<Serial2Tx, Serial2Rx, 1>> {
     static SERIAL: Mutex<Serial<Serial2Tx, Serial2Rx, 1>> = Mutex::new(Serial(None, None));
     SERIAL.lock()
@@ -190,6 +221,7 @@ pub fn serial_2() -> MutexGuard<'static, Serial<Serial2Tx, Serial2Rx, 1>> {
 static SERIAL_1_WAKERS: WakerSet = WakerSet::new();
 static SERIAL_2_WAKERS: WakerSet = WakerSet::new();
 
+/// The interrupt function for serial 1
 pub extern "C" fn serial_1_intr() {
     #[cfg(board = "red_v")]
     unsafe {
@@ -199,6 +231,7 @@ pub extern "C" fn serial_1_intr() {
     }
 }
 
+/// The interrupt function for serial 2
 pub extern "C" fn serial_2_intr() {
     #[cfg(board = "red_v")]
     unsafe {

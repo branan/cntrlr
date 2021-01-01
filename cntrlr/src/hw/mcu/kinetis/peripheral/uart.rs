@@ -4,10 +4,7 @@ use super::{
     super::{Mk20Dx128, Mk20Dx256, Mk64Fx512, Mk66Fx1M0, Mkl26Z64},
     sim::{Gate, Peripheral},
 };
-use crate::{
-    io::Parity,
-    register::{Register, Reserved},
-};
+use crate::register::{Register, Reserved};
 use bit_field::BitField;
 use core::marker::PhantomData;
 
@@ -69,19 +66,6 @@ impl<M, const N: usize> Uart<M, (), (), N> {
             bdh.set_bits(0..5, divisor.get_bits(13..18) as u8);
         });
         self.regs.bdl.write(divisor.get_bits(5..13) as u8);
-    }
-
-    /// Set whether there is a parity bit, and whether that bit is
-    /// even or odd.
-    pub fn set_parity(&mut self, parity: Option<Parity>) {
-        if let Some(parity) = parity {
-            self.regs.c2.update(|c2| {
-                c2.set_bit(0, parity == Parity::Odd);
-            });
-        }
-        self.regs.c1.update(|c1| {
-            c1.set_bit(1, parity.is_some());
-        });
     }
 }
 
@@ -223,6 +207,9 @@ impl<M, T, R, const N: usize> Uart<M, T, R, N>
 where
     Uart<M, T, R, N>: Fifo,
 {
+    /// Enable the transmit FIFO and set its watermark
+    ///
+    /// See the chip documentation for valid values.
     pub fn enable_tx_fifo(&mut self, depth: u8, watermark: u8) {
         assert!(depth <= Self::DEPTH);
         let fifo_ctl = match depth {
@@ -244,6 +231,9 @@ where
         self.regs.twfifo.write(watermark);
     }
 
+    /// Enable the recieve FIFO and set its watermark
+    ///
+    /// See the chip documentation for valid values.
     pub fn enable_rx_fifo(&mut self, depth: u8, watermark: u8) {
         assert!(depth <= Self::DEPTH);
         let fifo_ctl = match depth {
@@ -549,6 +539,7 @@ unsafe impl Peripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 2> {
 /// This is a marker trait to indicate whether a given UART supports a
 /// FIFO.
 pub unsafe trait Fifo {
+    /// The maximum FIFO depth for this UART instance.
     const DEPTH: u8;
 }
 

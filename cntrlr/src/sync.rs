@@ -1,3 +1,5 @@
+//! Synchronization primitives
+
 use core::{
     cell::UnsafeCell,
     ops::{Deref, DerefMut},
@@ -7,10 +9,20 @@ use core::{
 #[cfg(not(mcu = "fe310g002"))]
 use core::sync::atomic::AtomicBool;
 
+/// A true or false flag
+///
+/// This provides [`AtomicBool`](core::sync::atomic::AtomicBool)-like
+/// semantics across all supported MCUs. On MCUs without atomic
+/// support, it is implemented as a critical section.
 #[cfg(not(mcu = "fe310g002"))]
 #[derive(Default)]
 pub struct Flag(AtomicBool);
 
+/// A true or false flag
+///
+/// This provides [`AtomicBool`](core::sync::atomic::AtomicBool)-like
+/// semantics across all supported MCUs. On MCUs without atomic
+/// support, it is implemented as a critical section.
 #[cfg(mcu = "fe310g002")]
 #[derive(Default)]
 pub struct Flag(AtomicUsize);
@@ -19,6 +31,7 @@ unsafe impl Send for Flag {}
 unsafe impl Sync for Flag {}
 
 impl Flag {
+    /// Create a new Flag
     pub const fn new(value: bool) -> Self {
         #[cfg(mcu = "fe310g002")]
         {
@@ -31,6 +44,9 @@ impl Flag {
         }
     }
 
+    /// Store a value to the flag.
+    ///
+    /// See [`core::sync::atomic::AtomicBool::store`]
     pub fn store(&self, value: bool, ordering: Ordering) {
         self.0.store(value.into(), ordering)
     }
@@ -38,6 +54,9 @@ impl Flag {
 
 #[cfg(any(doc, target_has_atomic = "8"))]
 impl Flag {
+    /// Stores a value, returning the previous value
+    ///
+    /// See [`core::sync::atomic::AtomicBool::swap`]
     pub fn swap(&self, value: bool, ordering: Ordering) -> bool {
         let out = self.0.swap(value.into(), ordering);
         #[cfg(mcu = "fe310g002")]
@@ -54,6 +73,9 @@ impl Flag {
 
 #[cfg(not(any(doc, target_has_atomic = "8")))]
 impl Flag {
+    /// Stores a value, returning the previous value
+    ///
+    /// See [`core::sync::atomic::AtomicBool::swap`]
     pub fn swap(&self, value: bool, ordering: Ordering) -> bool {
         let (load_ordering, store_ordering) = match ordering {
             Ordering::Relaxed => (Ordering::Relaxed, Ordering::Relaxed),
@@ -71,20 +93,32 @@ impl Flag {
     }
 }
 
+/// An atomic pointer-sized value
+///
+/// This provides [`AtomicUsize`](core::sync::atomic::AtomicUsize)-like
+/// semantics across all supported MCUs. On MCUs without atomic
+/// support, it is implemented as a critical section.
 pub struct Value(AtomicUsize);
 
 unsafe impl Send for Value {}
 unsafe impl Sync for Value {}
 
 impl Value {
+    /// Create a new value
     pub const fn new(value: usize) -> Self {
         Self(AtomicUsize::new(value))
     }
 
+    /// Store a value
+    ///
+    /// See [`core::sync::atomic::AtomicUsize::store`]
     pub fn store(&self, value: usize, ordering: Ordering) {
         self.0.store(value, ordering)
     }
 
+    /// Load a value
+    ///
+    /// See [`core::sync::atomic::AtomicUsize::load`]
     pub fn load(&self, ordering: Ordering) -> usize {
         self.0.load(ordering)
     }
@@ -92,6 +126,9 @@ impl Value {
 
 #[cfg(any(doc, target_has_atomic = "32"))]
 impl Value {
+    /// Stores a value, returning the previous value
+    ///
+    /// See [`core::sync::atomic::AtomicUsize::swap`]
     pub fn swap(&self, value: usize, ordering: Ordering) -> usize {
         self.0.swap(value, ordering)
     }
@@ -99,6 +136,9 @@ impl Value {
 
 #[cfg(not(any(doc, target_has_atomic = "32")))]
 impl Value {
+    /// Stores a value, returning the previous value
+    ///
+    /// See [`core::sync::atomic::AtomicUsize::swap`]
     pub fn swap(&self, value: usize, ordering: Ordering) -> usize {
         let (load_ordering, store_ordering) = match ordering {
             Ordering::Relaxed => (Ordering::Relaxed, Ordering::Relaxed),
@@ -116,6 +156,7 @@ impl Value {
     }
 }
 
+/// A value which can be initalized only once
 pub struct Once<T> {
     state: Value,
     value: UnsafeCell<Option<T>>,
@@ -129,6 +170,7 @@ unsafe impl<T: Send> Send for Once<T> {}
 unsafe impl<T> Sync for Once<T> {}
 
 impl<T> Once<T> {
+    /// Create a new, uninitialized Once
     pub const fn new() -> Self {
         Self {
             state: Value::new(UNINIT),
@@ -136,6 +178,7 @@ impl<T> Once<T> {
         }
     }
 
+    /// Initialize the stored value if needed, then return it.
     pub fn get_or_init<F>(&self, f: F) -> &T
     where
         F: FnOnce() -> T,
@@ -159,6 +202,12 @@ impl<T> Once<T> {
     }
 }
 
+/// A simple lock
+///
+/// This lock does not disable interrupts, so attempting to use a
+/// mutex in an interrupt context may deadlock. In interrupt contexts,
+/// prefer a dedicated synchronization primitive based around
+/// [`without_interrupts`]
 pub struct Mutex<T> {
     lock: Flag,
     value: UnsafeCell<T>,
@@ -168,6 +217,7 @@ unsafe impl<T: Send> Send for Mutex<T> {}
 unsafe impl<T: Send> Sync for Mutex<T> {}
 
 impl<T> Mutex<T> {
+    /// Create a new Mutex
     pub const fn new(item: T) -> Self {
         Self {
             lock: Flag::new(false),
@@ -175,6 +225,7 @@ impl<T> Mutex<T> {
         }
     }
 
+    /// Acquire this mutex
     pub fn lock(&self) -> MutexGuard<T> {
         while self.lock.swap(true, Ordering::AcqRel) {}
         MutexGuard(self)
@@ -185,6 +236,7 @@ impl<T> Mutex<T> {
     }
 }
 
+/// An RAII guard for a [`Mutex`]
 pub struct MutexGuard<'a, T>(&'a Mutex<T>);
 
 impl<'a, T> Deref for MutexGuard<'a, T> {
@@ -257,6 +309,10 @@ impl InterruptGate {
     }
 }
 
+/// Runs the passed closure without interrupts, in a critical section.
+///
+/// This can be used as the underlying locking mechanism for
+/// situations where [`Mutex`] is not appropriate.
 pub fn without_interrupts<T, F>(f: F) -> T
 where
     F: FnOnce() -> T,
@@ -267,6 +323,10 @@ where
     out
 }
 
+/// Enable interrupts
+///
+/// Ensure that interrupts will be enabled once the outermost
+/// [`without_interrupts`] call is completed.
 pub fn enable_interrupts() {
     INTERRUPTS.flag_enable()
 }

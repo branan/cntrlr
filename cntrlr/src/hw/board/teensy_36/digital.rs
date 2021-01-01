@@ -1,3 +1,5 @@
+//! Digital pin supporte specific to the Teensy 3.6
+
 use crate::{
     hw::mcu::kinetis::mk66fx1m0::{Port, Sim},
     sync::Once,

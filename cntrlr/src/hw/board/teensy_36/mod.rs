@@ -1,3 +1,5 @@
+//! Board specific functionality for the Teensy 3.6
+
 use core::sync::atomic::AtomicUsize;
 
 pub mod digital;

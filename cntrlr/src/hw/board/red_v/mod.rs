@@ -1,3 +1,5 @@
+//! Board-specific functionality for the Sparkfun Red V
+
 use crate::sync::enable_interrupts;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
@@ -6,6 +8,9 @@ pub mod io;
 
 static CPU_FREQ: AtomicUsize = AtomicUsize::new(0);
 
+/// Set the clock for the board, in Hz.
+///
+/// Valid valies are 256 or 384 MHz
 pub fn set_clock(clock: usize) {
     use crate::hw::mcu::sifive::fe310g002::{Prci, Spi};
 
@@ -17,15 +22,30 @@ pub fn set_clock(clock: usize) {
     CPU_FREQ.store(clock, Ordering::Relaxed);
 
     let mut spi = Spi::<(), (), 0>::get();
-    spi.set_divider(spi_div);
+    spi.set_divisor(spi_div);
 
     let mut prci = Prci::get();
     prci.use_pll(r, f, q, div);
 }
 
+/// Early init for the Red V board.
+///
+/// This is a noop for this board.
+///
+///
+/// This will be included automatically if you are using the standard
+/// Cntrlr runtime. It should be invoked directly as part of startup
+/// only if you are overriding Cntrlr runtime behavior.
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_board_start")]
 pub unsafe extern "C" fn start() {}
 
+/// Late startup for the Red V board
+///
+/// Sets the processor clock and enables interrupts and exceptions.
+///
+/// This will be included automatically if you are using the standard
+/// Cntrlr runtime. It should be invoked directly as part of startup
+/// only if you are overriding Cntrlr runtime behavior.
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_board_init")]
 pub unsafe extern "C" fn init() {
     use crate::hw::mcu::sifive::fe310g002::Plic;
@@ -48,6 +68,10 @@ pub unsafe extern "C" fn init() {
     enable_interrupts();
 }
 
+/// Red V Reset stub
+///
+/// This initializes the stack pointer and trap vector, then invokes
+/// the Cntrlr reset function.
 #[cfg_attr(board = "red_v", link_section = ".__CNTRLR_START")]
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_redv_reset")]
 #[cfg_attr(board = "red_v", naked)]
@@ -67,6 +91,11 @@ pub unsafe extern "C" fn reset() {
     );
 }
 
+/// An early trap function
+///
+/// This loads `mcause`, `mepc`, and `mtval` into `t0`, `t1`, and `t2`
+/// respectively, then hangs. It is suitable as a first trap function
+/// for before any initalization has been completed.
 #[cfg_attr(board = "red_v", link_section = ".__CNTRLR_EARLY_TRAP")]
 #[cfg_attr(board = "red_v", naked)]
 pub unsafe extern "C" fn early_trap() {
@@ -82,6 +111,10 @@ pub unsafe extern "C" fn early_trap() {
     );
 }
 
+/// Red V trap function
+///
+/// This function dispatches traps as appropriate to the various
+/// module-specific interrupt handlers.
 #[cfg_attr(board = "red_v", link_section = ".__CNTRLR_TRAP")]
 #[cfg_attr(board = "red_v", naked)]
 #[allow(dead_code)]

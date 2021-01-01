@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright 2020 Branan Riley <me@branan.info>
 
+//! Build support for Cntrlr boards
+
+#![deny(missing_docs)]
+
 use std::{env, str::FromStr};
 
 /// Set up the rust build environment for the selected board.
@@ -22,9 +26,15 @@ pub fn configure_board() -> Option<Board> {
         })
 }
 
+/// The utility used to flash a board
 pub enum Flash {
+    /// This board is flashed with `avrdude`, using the specified programmer (-c)
     AvrDude(&'static str),
+
+    /// This board is flashed with `teensy-loader-cli`, using the MCU specified in the board config
     TeensyLoader,
+
+    /// This board is flashed with `openocd`, using the specified configuration file
     OpenOcd(&'static str),
 }
 
@@ -139,6 +149,7 @@ impl FromStr for Board {
 }
 
 impl Board {
+    /// Check if the specified target is valid for this board.
     pub fn validate_target(&self, target: &str) -> bool {
         self.targets.iter().any(|item| item == &target)
     }

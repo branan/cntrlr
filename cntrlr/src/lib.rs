@@ -1,5 +1,19 @@
+//! An Arduino-style library for simple asynchronous embedded programming
+//!
+//! ```
+//! use cntrlr::prelude::*;
+//! use core::futures::pending;
+//! #[entry]
+//! async fn main() -> ! {
+//!    serial_1().enable(9600);
+//!    writeln!(serial_1(), "Hello, World").await.expect("Failed to message");
+//!    pending().await
+//! }
+//! ```
+
 #![no_std]
 #![allow(incomplete_features)]
+#![deny(missing_docs)]
 #![feature(
     alloc_error_handler,
     asm,
@@ -20,55 +34,36 @@ pub mod io;
 pub mod sync;
 pub mod task;
 
+/// Support Macros
 pub mod macros {
-    pub use cntrlr_macros::{entry, reset};
+    pub use cntrlr_macros::{entry, raw_entry, reset};
 }
 
+/// Common functions and traits for using Cntrlr
 pub mod prelude {
     pub use crate::io::{Read, ReadExt, Serial, Write, WriteExt};
     use cntrlr_macros::prelude_fn;
 
-    #[prelude_fn(arduino_uno, red_v)]
+    #[prelude_fn(red_v)]
     pub use crate::io::pc_serial;
 
-    #[prelude_fn(
-        arduino_uno,
-        arduino_leonardo,
-        teensy_30,
-        teensy_32,
-        teensy_35,
-        teensy_36,
-        teensy_40,
-        teensy_41,
-        teensy_lc,
-        red_v
-    )]
+    #[prelude_fn(red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
     pub use crate::io::serial_1;
 
-    #[prelude_fn(
-        teensy_30, teensy_32, teensy_35, teensy_36, teensy_40, teensy_41, teensy_lc, red_v
-    )]
+    #[prelude_fn(red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
     pub use crate::io::serial_2;
 
-    #[prelude_fn(
-        teensy_30, teensy_32, teensy_35, teensy_36, teensy_40, teensy_41, teensy_lc
-    )]
+    #[prelude_fn(teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
     pub use crate::io::serial_3;
 
-    #[prelude_fn(teensy_35, teensy_36, teensy_40, teensy_41)]
+    #[prelude_fn(teensy_35, teensy_36)]
     pub use crate::io::serial_4;
 
-    #[prelude_fn(teensy_35, teensy_36, teensy_40, teensy_41)]
+    #[prelude_fn(teensy_35, teensy_36)]
     pub use crate::io::serial_5;
 
-    #[prelude_fn(teensy_35, teensy_40, teensy_41)]
+    #[prelude_fn(teensy_35)]
     pub use crate::io::serial_6;
-
-    #[prelude_fn(teensy_40, teensy_41)]
-    pub use crate::io::serial_7;
-
-    #[prelude_fn(teensy_41)]
-    pub use crate::io::serial_8;
 
     pub use crate::macros::entry;
 }
