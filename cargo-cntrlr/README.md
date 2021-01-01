@@ -1,4 +1,5 @@
 # Cargo-cntrlr
+[![Crates.io](https://img.shields.io/crates/d/cargo-cntrlr)](https://crates.io/crates/cargo-cntrlr)
 
 Cargo-cntrlr provides wrappers for a few common Cargo subcommands that
 enable tighter integration with [Cntrlr](https://crates.io/crates/cntrlr).
