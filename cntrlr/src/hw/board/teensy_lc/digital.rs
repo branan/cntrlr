@@ -17,6 +17,7 @@ use crate::{
 /// This abstracts the mapping of Teensy pins to MCU pins, allowing
 /// operations to be defined generically and then invoked for any
 /// given pin.
+#[inline]
 pub fn pin_op<Op: PinOp>(pin: usize, arg: Op::Arg) -> Option<Op::Result> {
     match pin {
         0 => Op::do_op(port_b().pin::<16>(), arg),

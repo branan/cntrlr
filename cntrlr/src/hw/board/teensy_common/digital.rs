@@ -24,6 +24,7 @@ pub trait PinOp {
     ) -> Self::Result;
 
     /// The operation, optionally performed on an optional pin.
+    #[inline(always)]
     fn do_op<M, const N: usize, const P: usize>(
         pin: Option<port::Pin<'_, M, N, P>>,
         arg: Self::Arg,
@@ -42,6 +43,7 @@ impl PinOp for WriteOp {
     type Arg = bool;
     type Result = ();
 
+    #[inline(always)]
     fn op<M, const N: usize, const P: usize>(pin: port::Pin<'_, M, N, P>, value: bool) {
         pin.into_gpio().write(value);
     }
@@ -53,7 +55,7 @@ impl PinOp for ReadOp {
     type Arg = ();
     type Result = bool;
 
-    #[inline]
+    #[inline(always)]
     fn op<M, const N: usize, const P: usize>(pin: port::Pin<'_, M, N, P>, _: ()) -> bool {
         pin.into_gpio().read()
     }
@@ -65,7 +67,7 @@ impl PinOp for ModeOp {
     type Arg = PinMode;
     type Result = ();
 
-    #[inline]
+    #[inline(always)]
     fn op<M, const N: usize, const P: usize>(pin: port::Pin<'_, M, N, P>, mode: PinMode) {
         let mut pin = pin.into_gpio();
         match mode {

@@ -41,6 +41,7 @@ pub enum Pull {
 /// becomes a digital output is MCU-specific and should not be
 /// relied upon.
 #[board_fn(digital, red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
+#[inline]
 pub fn digital_write(pin: usize, value: bool) {}
 
 /// Read the state of a digital pin.
@@ -53,6 +54,7 @@ pub fn digital_write(pin: usize, value: bool) {}
 /// * The pin is in use by a different module
 /// * The pin number is outside the range of pins on the board.
 #[board_fn(digital, red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
+#[inline]
 pub fn digital_read(pin: usize) -> bool {}
 
 /// Set a pin as a digital input or output
@@ -65,4 +67,5 @@ pub fn digital_read(pin: usize) -> bool {}
 /// module releases the pin is implementation specific and should
 /// not be relied upon.
 #[board_fn(digital, red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]
+#[inline]
 pub fn pin_mode(pin: usize, mode: PinMode) {}

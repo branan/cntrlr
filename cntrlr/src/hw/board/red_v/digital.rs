@@ -25,6 +25,7 @@ pub trait PinOp {
     fn op<const N: usize, const P: usize>(pin: Pin<'_, N, P>, arg: Self::Arg) -> Self::Result;
 
     /// The operation, optionally performed on an optional pin.
+    #[inline(always)]
     fn do_op<const N: usize, const P: usize>(
         pin: Option<Pin<'_, N, P>>,
         arg: Self::Arg,
@@ -43,6 +44,7 @@ impl PinOp for WriteOp {
     type Arg = bool;
     type Result = ();
 
+    #[inline(always)]
     fn op<const N: usize, const P: usize>(pin: Pin<'_, N, P>, value: bool) {
         pin.into_gpio().write(value);
     }
@@ -54,7 +56,7 @@ impl PinOp for ReadOp {
     type Arg = ();
     type Result = bool;
 
-    #[inline]
+    #[inline(always)]
     fn op<const N: usize, const P: usize>(pin: Pin<'_, N, P>, _: ()) -> bool {
         pin.into_gpio().read()
     }
@@ -66,7 +68,7 @@ impl PinOp for ModeOp {
     type Arg = PinMode;
     type Result = ();
 
-    #[inline]
+    #[inline(always)]
     fn op<const N: usize, const P: usize>(pin: Pin<'_, N, P>, mode: PinMode) {
         let mut pin = pin.into_gpio();
         match mode {
@@ -98,6 +100,7 @@ impl PinOp for ModeOp {
 /// This abstracts the mapping of Teensy pins to MCU pins, allowing
 /// operations to be defined generically and then invoked for any
 /// given pin.
+#[inline]
 pub fn pin_op<Op: PinOp>(pin: usize, arg: Op::Arg) -> Option<Op::Result> {
     match pin {
         0 => Op::do_op(gpio().pin::<16>(), arg),
