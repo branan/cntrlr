@@ -5,7 +5,8 @@
 
 use super::super::Fe310G002;
 use crate::sync::Flag;
-use core::{cell::UnsafeCell, marker::PhantomData, sync::atomic::Ordering};
+use bit_field::BitField;
+use core::{cell::UnsafeCell, marker::PhantomData, ptr::read_volatile, sync::atomic::Ordering};
 
 struct GpioReg(UnsafeCell<u32>);
 
@@ -24,6 +25,11 @@ impl GpioReg {
                 asm!("amoand.w {}, {}, ({})", out(reg) _, in(reg) !(1 << N), in(reg) self.0.get());
             }
         }
+    }
+
+    fn get<const N: usize>(&self) -> bool {
+        assert!(N < 32);
+        unsafe { read_volatile(self.0.get()).get_bit(N) }
     }
 }
 
@@ -86,6 +92,14 @@ impl<M, const N: usize> Gpio<M, N> {
     }
 }
 
+impl<M, const N: usize, const P: usize> Pin<'_, M, N, P> {
+    /// Use this pin as a GPIO
+    pub fn into_gpio(self) -> GpioPin<Self> {
+        self.port.regs.iof_en.set::<P>(false);
+        GpioPin(self)
+    }
+}
+
 impl<M, const N: usize, const P: usize> Drop for Pin<'_, M, N, P> {
     fn drop(&mut self) {
         self.port.pins[P].store(false, Ordering::Release);
@@ -132,6 +146,32 @@ pub struct UartRx<P>(P);
 
 /// A GPIO pin whic is configured for UART transmit
 pub struct UartTx<P>(P);
+
+/// A GPIO pin which is configured as a GPIO
+pub struct GpioPin<P>(P);
+
+impl<M, const N: usize, const P: usize> GpioPin<Pin<'_, M, N, P>> {
+    /// Set this pin as high or low
+    pub fn write(&mut self, value: bool) {
+        self.0.port.regs.output_val.set::<P>(value);
+    }
+
+    /// Read the status of this pin
+    pub fn read(&self) -> bool {
+        self.0.port.regs.input_val.get::<P>()
+    }
+
+    /// Set whether this pin is an output or an input
+    pub fn set_output(&mut self, output: bool) {
+        self.0.port.regs.output_en.set::<P>(output);
+        self.0.port.regs.input_en.set::<P>(!output);
+    }
+
+    /// Enable the pull-up resistor
+    pub fn enable_pullup(&mut self, pullup: bool) {
+        self.0.port.regs.pue.set::<P>(pullup);
+    }
+}
 
 impl super::uart::UartRx<Fe310G002, 0> for UartRx<Pin<'_, Fe310G002, 0, 16>> {}
 impl super::uart::UartRx<Fe310G002, 1> for UartRx<Pin<'_, Fe310G002, 0, 23>> {}
