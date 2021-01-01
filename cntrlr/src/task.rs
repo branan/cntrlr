@@ -41,12 +41,37 @@ impl Executor {
     }
 
     /// Hand control off to the Executor
-    pub fn run(&mut self) -> ! {
+    ///
+    /// # Safety
+    /// It must be safe for this function to enable interrupts.
+    pub unsafe fn run(&mut self) -> ! {
         loop {
+            // The execution loop is broken into two parts:
+            //
+            // 1. With interrupts disabled, check all tasks and sleep
+            // if none are ready. On all supported architectures, this
+            // sleep implicitly enables interrupts.
+            //
+            // 2. When we wake from sleep, run any tasks which have
+            // been made ready.
+            //
+            // This two-phase check uses a few more cycles, but it
+            // is a simple way to ensure we don't miss a wake.
+            without_interrupts(|| {
+                if self
+                    .tasks
+                    .iter()
+                    .all(|task| !task.wake.load(Ordering::Acquire))
+                {
+                    // This is the same instruction with basically
+                    // the same semantics on both ARM and RISC-V.
+                    asm!("wfi")
+                }
+            });
             for task in &mut self.tasks {
                 if task.wake.load(Ordering::Acquire) {
                     task.wake.store(false, Ordering::Relaxed);
-                    let waker = unsafe { waker_new(&task.wake) };
+                    let waker = waker_new(&task.wake);
                     let mut context = Context::from_waker(&waker);
                     let _ = task.future.as_mut().poll(&mut context);
                 }
