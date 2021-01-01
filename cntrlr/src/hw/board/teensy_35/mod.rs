@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! Board-specific functionality for the Teensy 3.5
 
 use core::sync::atomic::AtomicUsize;

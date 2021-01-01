@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 use crate::sync::Mutex;
 use alloc::alloc::{GlobalAlloc, Layout};
 use core::ptr::null_mut;
@@ -129,6 +132,7 @@ impl GlobalAllocator {
         self.0.lock().brk = brk;
     }
 }
+
 unsafe impl GlobalAlloc for GlobalAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         self.0.lock().allocate(layout)

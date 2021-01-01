@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! Hardware support
 //!
 //! Generally, applications should not have to access this module. It

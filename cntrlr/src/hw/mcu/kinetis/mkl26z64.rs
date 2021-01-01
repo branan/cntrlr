@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! The NXP mkl26z64 microcontroller
 //!
 //! This is an ARM Cortex-M0 microcontroller produced by NXP. It is

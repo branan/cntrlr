@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! NXP Kinetis family microcontrollers
 
 /// Marker for peripheral instances configured for the mk20dx128

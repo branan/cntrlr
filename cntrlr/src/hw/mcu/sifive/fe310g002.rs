@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! The SiFive fe310g002 MCU
 //!
 //! This is a risc-v microcontroller produced by SiFive. It is used on

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! The NXP mk66fx1m0 MCU
 //!
 //! This is an ARM Cortex-M4F microcontroller produced by NXP. It is

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! Microcontrollers in the SiFive Freedom Everywhere family
 
 /// Marker for peripheral instances configured for the fe310g002

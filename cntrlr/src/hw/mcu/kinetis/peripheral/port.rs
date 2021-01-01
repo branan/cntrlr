@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! Ports and Pins
 //!
 //! In the Kinetis familiy, the port module manges I/O pins and which

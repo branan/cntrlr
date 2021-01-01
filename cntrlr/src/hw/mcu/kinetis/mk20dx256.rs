@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! The NXP mk20dx256 MCU
 //!
 //! This is an ARM Cortex-M4 microcontroller produced by NXP. It is

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! SPI and QSPI
 //!
 //! On the FE310 series, the SPI communications and QSPI memory

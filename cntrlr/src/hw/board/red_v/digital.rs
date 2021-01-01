@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! Digital pin support specific to the Sparkfun Red V
 
 use crate::{hw::mcu::sifive::fe310g002::Gpio, sync::Once};

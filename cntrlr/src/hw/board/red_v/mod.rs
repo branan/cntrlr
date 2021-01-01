@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright 2020 Branan Riley <me@branan.info>
+
 //! Board-specific functionality for the Sparkfun Red V
 
 use crate::sync::enable_interrupts;
