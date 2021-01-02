@@ -67,15 +67,16 @@ static LOCK: Flag = Flag::new(false);
 
 impl Gpio<Fe310G002, 0> {
     /// Get GPIO instance 0
-    pub fn get() -> Self {
+    pub fn get() -> Option<Self> {
         unsafe {
             if LOCK.swap(true, Ordering::Acquire) {
-                panic!("Lock contention");
-            }
-            Self {
-                pins: Default::default(),
-                regs: &*(0x1001_2000 as *const _),
-                _mcu: PhantomData,
+                None
+            } else {
+                Some(Self {
+                    pins: Default::default(),
+                    regs: &*(0x1001_2000 as *const _),
+                    _mcu: PhantomData,
+                })
             }
         }
     }

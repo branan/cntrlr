@@ -28,16 +28,15 @@ static SYSTICK_LOCK: Flag = Flag::new(false);
 impl SysTick {
     /// Get the handle to the SysTick
     ///
-    /// # Panics
-    // This method will panic if there is an outstanding handle to the
-    /// SysTick timer.
-    pub fn get() -> Self {
+    /// Returns `None` if the SysTick is already in use.
+    pub fn get() -> Option<Self> {
         unsafe {
             if SYSTICK_LOCK.swap(true, Ordering::AcqRel) {
-                panic!("Lock contention");
-            }
-            Self {
-                regs: &mut *(0xE000E010 as *mut _),
+                None
+            } else {
+                Some(Self {
+                    regs: &mut *(0xE000E010 as *mut _),
+                })
             }
         }
     }

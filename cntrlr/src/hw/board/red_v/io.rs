@@ -29,6 +29,12 @@ pub enum SerialError {
     /// The serial port cannot be enabled because its TX or RX pin is in use
     PinInUse,
 
+    /// The serial port cannot be enabled because its UART is in use
+    UartInUse,
+
+    /// The serial port cannot be enabled because the GPIO is in use
+    GpioInUse,
+
     /// The serial port cannot be enabled because the selected baud rate is invalid
     InvalidBaud,
 }
@@ -138,15 +144,17 @@ impl io::Serial for Serial<Serial1Tx, Serial1Rx, 0> {
             return Err(SerialError::InvalidBaud);
         }
 
-        let mut uart = Uart::<(), (), 0>::get();
+        let mut uart = Uart::<(), (), 0>::get().ok_or(SerialError::UartInUse)?;
         uart.set_divisor(divisor);
         uart.set_watermarks(7, 0);
 
         let tx = super::digital::gpio()
+            .ok_or(SerialError::GpioInUse)?
             .pin::<17>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_tx();
         let rx = super::digital::gpio()
+            .ok_or(SerialError::GpioInUse)?
             .pin::<16>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
@@ -170,15 +178,17 @@ impl io::Serial for Serial<Serial2Tx, Serial2Rx, 1> {
             return Err(SerialError::InvalidBaud);
         }
 
-        let mut uart = Uart::<(), (), 1>::get();
+        let mut uart = Uart::<(), (), 1>::get().ok_or(SerialError::UartInUse)?;
         uart.set_divisor(divisor);
         uart.set_watermarks(7, 0);
 
         let tx = super::digital::gpio()
+            .ok_or(SerialError::GpioInUse)?
             .pin::<18>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_tx();
         let rx = super::digital::gpio()
+            .ok_or(SerialError::GpioInUse)?
             .pin::<23>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();

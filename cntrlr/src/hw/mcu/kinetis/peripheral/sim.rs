@@ -71,18 +71,15 @@ static LOCK: Flag = Flag::new(false);
 
 impl<M> Sim<M> {
     /// Get the handle to the SIM
-    ///
-    /// # Panics
-    /// This method will panic if there is an outstanding handle to the
-    /// SIM
-    pub fn get() -> Self {
+    pub fn get() -> Option<Self> {
         unsafe {
             if LOCK.swap(true, Ordering::Acquire) {
-                panic!("Lock contention");
-            }
-            Self {
-                regs: &mut *(0x4004_7000 as *mut _),
-                _mcu: PhantomData,
+                None
+            } else {
+                Some(Self {
+                    regs: &mut *(0x4004_7000 as *mut _),
+                    _mcu: PhantomData,
+                })
             }
         }
     }
@@ -126,20 +123,17 @@ impl<M> Sim<M> {
 
     /// Enable  a peripheral
     ///
-    /// Enable a clock-gated peripheral, returning its handle.
-    ///
-    /// # Panics
-    /// This method will panic if there is an outstanding handle to the
-    /// requested peripheral
-    pub fn enable_peripheral<P: Peripheral<M>>(&mut self) -> P {
+    /// Enable a clock-gated peripheral, returning its handle. Returns
+    /// `None` if the peripheral is already active.
+    pub fn enable_peripheral<P: Peripheral<M>>(&mut self) -> Option<P> {
         unsafe {
             let gate = bitband_address(self.regs.scgc.as_mut_ptr().add(P::GATE.0 - 1), P::GATE.1);
             if core::ptr::read_volatile(gate) != 0 {
-                panic!("Peripheral at {:?} is already enabled", P::GATE);
+                None
+            } else {
+                core::ptr::write_volatile(gate, 1);
+                Some(P::new(Gate(gate)))
             }
-
-            core::ptr::write_volatile(gate, 1);
-            P::new(Gate(gate))
         }
     }
 }

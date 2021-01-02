@@ -3,6 +3,7 @@
 
 //! Board-specific functionality for the Teensy 3.0
 
+use super::teensy_common::SetClockError;
 use crate::hw::mcu::kinetis::mk20dx128::{
     Clock, Mcg, Osc, OscRange, PeripheralClockSource, Sim, SysTick, UsbClockSource, Watchdog,
 };
@@ -21,7 +22,7 @@ static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
 /// Set the clock for this board, in Hz.
 ///
 /// Valid values are 48, 32, 24, 16, 12, 8, 6, 4, or 3 MHz
-pub fn set_clock(clock: usize) {
+pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
     let (core, bus, flash, usb_num, usb_den, pll_num, pll_den) = match clock {
         48_000_000 => (1, 1, 2, 1, 1, 24, 8),
         32_000_000 => (3, 3, 3, 1, 2, 24, 4),
@@ -32,18 +33,21 @@ pub fn set_clock(clock: usize) {
         6_000_000 => (8, 8, 8, 1, 1, 24, 8),
         4_000_000 => (12, 12, 12, 1, 1, 24, 8),
         3_000_000 => (16, 16, 16, 1, 1, 24, 8),
-        _ => panic!("Invalid clock rate for Teensy 3.0: {}", clock),
+        _ => return Err(SetClockError::InvalidClockRate),
     };
 
-    CPU_FREQ.store(clock, Ordering::Relaxed);
-    BUS_FREQ.store(clock * core as usize / bus as usize, Ordering::Relaxed);
+    let mut mcg = Mcg::get().ok_or(SetClockError::McgInUse)?;
+    let mut sim = Sim::get().ok_or(SetClockError::SimInUse)?;
 
     // First, switch back to a slow clock so it's safe to update dividers
-    let mut mcg = Mcg::get();
     let fbe = match mcg.clock() {
         Clock::Fei(fei) => {
-            let osc_token = Osc::get().enable(10);
-            fei.use_external(512, OscRange::VeryHigh, osc_token)
+            let osc_token = Osc::get()
+                .ok_or(SetClockError::OscInUse)?
+                .enable(10)
+                .map_err(|e| SetClockError::Osc(e))?;
+            fei.use_external(512, OscRange::VeryHigh, Some(osc_token))
+                .map_err(|e| SetClockError::Mcg(e))?
         }
         Clock::Fbe(fbe) => fbe,
         Clock::Pbe(pbe) => pbe.disable_pll(),
@@ -51,24 +55,30 @@ pub fn set_clock(clock: usize) {
     };
 
     // Next, update the main dividers for our new clock rate
-    let mut sim = Sim::get();
     sim.set_dividers(core, bus, flash);
     sim.set_usb_dividers(usb_num, usb_den);
 
     // Finally, re-enable the PLL at our preferred speed
-    fbe.enable_pll(pll_num, pll_den).use_pll();
+    fbe.enable_pll(pll_num, pll_den)
+        .map_err(|e| SetClockError::Mcg(e))?
+        .use_pll();
 
     // Switch peripherals over to the PLL
     sim.set_usb_source(UsbClockSource::PllFll);
     sim.set_peripheral_source(PeripheralClockSource::Pll);
 
     // Reset SysTick for new clock rate.
-    let mut systick = SysTick::get();
-    systick.enable(false);
-    let reload = (clock / 1000) - 1;
-    systick.set_reload_value(reload as u32);
-    systick.set_current_value(0);
-    systick.enable(true);
+    if let Some(mut systick) = SysTick::get() {
+        systick.enable(false);
+        let reload = (clock / 1000) - 1;
+        systick.set_reload_value(reload as u32);
+        systick.set_current_value(0);
+        systick.enable(true);
+    }
+
+    CPU_FREQ.store(clock, Ordering::Relaxed);
+    BUS_FREQ.store(clock * core as usize / bus as usize, Ordering::Relaxed);
+    Ok(())
 }
 
 /// Early startup for the Teensy 3.0 board
@@ -96,10 +106,12 @@ pub unsafe extern "C" fn init() {
     // Switch systick to core clock and enable the systick
     // interrupt. The rest of the systick configuration happens as
     // part of setting the clock.
-    SysTick::get().use_core_clock(true);
-    SysTick::get().enable_interrupt(true);
+    if let Some(mut systick) = SysTick::get() {
+        systick.use_core_clock(true);
+        systick.enable_interrupt(true);
+    }
 
-    set_clock(48_000_000);
+    set_clock(48_000_000).expect("Could not set core clock at init");
 
     /// TODO: Create an NVIC peripheral
     const NVIC_ISER: *mut u32 = 0xE000_E100 as *mut _;

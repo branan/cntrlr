@@ -78,21 +78,28 @@ pub enum Clock<'a> {
     Pee(Pee<'a>),
 }
 
+/// Error type for MCG operations
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum Error {
+    /// The specified divider is invalid
+    InvalidDivider,
+}
+
 static LOCK: Flag = Flag::new(false);
 
 impl Mcg {
     /// Get the handdle to the MCG
     ///
-    /// # Panics
-    /// This method will panic if there is an outstanding handle to the
-    /// MCG
-    pub fn get() -> Self {
+    /// Returns `None` if the MCG is already in use.
+    pub fn get() -> Option<Self> {
         unsafe {
             if LOCK.swap(true, Ordering::Acquire) {
-                panic!("Lock contention");
-            }
-            Self {
-                regs: &mut *(0x4006_4000 as *mut _),
+                None
+            } else {
+                Some(Self {
+                    regs: &mut *(0x4006_4000 as *mut _),
+                })
             }
         }
     }
@@ -183,11 +190,12 @@ impl<'a> Fei<'a> {
     /// If `token` is [`Some`], the external reference will be
     /// configured using the internal oscillator. If it is [`None`],
     /// the external reference clock is used directly.
-    ///
-    /// # Panics
-    /// This method will panic if the requested divider is invalid for
-    /// the active oscillator range.
-    pub fn use_external(self, divide: u32, range: OscRange, token: Option<OscToken>) -> Fbe<'a> {
+    pub fn use_external(
+        self,
+        divide: u32,
+        range: OscRange,
+        token: Option<OscToken>,
+    ) -> Result<Fbe<'a>, Error> {
         self.0.regs.c2.update(|c2| {
             c2.set_bits(4..6, range.into());
             c2.set_bit(2, token.is_some());
@@ -208,7 +216,7 @@ impl<'a> Fei<'a> {
                 32 => 5,
                 64 => 6,
                 128 => 7,
-                _ => panic!("Invalid external clock divider: {}", divide),
+                _ => return Err(Error::InvalidDivider),
             }
         } else {
             match divide {
@@ -220,7 +228,7 @@ impl<'a> Fei<'a> {
                 1024 => 5,
                 1280 => 6,
                 1536 => 7,
-                _ => panic!("Invalid external clock divider: {}", divide),
+                _ => return Err(Error::InvalidDivider),
             }
         };
 
@@ -237,7 +245,7 @@ impl<'a> Fei<'a> {
         while self.0.regs.s.read().get_bit(4) {}
         while self.0.regs.s.read().get_bits(2..4) != OscSource::External.into() {}
 
-        Fbe(self.0)
+        Ok(Fbe(self.0))
     }
 }
 
@@ -247,18 +255,13 @@ impl<'a> Fbe<'a> {
     /// This method does not protect you from selecting clock
     /// frequencies which are outside of the acceptable range for the
     /// MCU. Be careful!
-    ///
-    /// # Panics
-    /// This method will panic if the requested numerator or
-    /// denominator is outside of the representable range in the
-    /// configuration registers.
-    pub fn enable_pll(self, numerator: u8, denominator: u8) -> Pbe<'a> {
+    pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a>, Error> {
         if numerator < 24 || numerator > 55 {
-            panic!("Invalid PLL VCO divide factor: {}", numerator);
+            return Err(Error::InvalidDivider);
         }
 
         if denominator < 1 || denominator > 25 {
-            panic!("Invalid PLL reference divide factor: {}", denominator);
+            return Err(Error::InvalidDivider);
         }
 
         self.0.regs.c5.update(|c5| {
@@ -275,7 +278,7 @@ impl<'a> Fbe<'a> {
         // Wait for the PLL to be "locked" and stable
         while !self.0.regs.s.read().get_bit(6) {}
 
-        Pbe(self.0)
+        Ok(Pbe(self.0))
     }
 }
 

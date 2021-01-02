@@ -7,6 +7,17 @@ use crate::{register::Register, sync::Flag};
 use bit_field::BitField;
 use core::sync::atomic::Ordering;
 
+/// Error for [`Osc::enable`]
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum Error {
+    /// The provided capacitance value is invalid
+    InvalidCapacitance,
+
+    /// The oscillator was already enabled
+    AlreadyEnabled,
+}
+
 #[repr(C)]
 struct OscRegs {
     cr: Register<u8>,
@@ -28,33 +39,28 @@ static LOCK: Flag = Flag::new(false);
 impl Osc {
     /// Get the handle to the OSC
     ///
-    /// # Panics
-    /// This method will panic if there is an outstanding handle to the
-    /// OSC
-    pub fn get() -> Self {
+    /// Returns `None` if the Osc is already in use.
+    pub fn get() -> Option<Self> {
         unsafe {
             if LOCK.swap(true, Ordering::Acquire) {
-                panic!("Lock contention");
-            }
-            Self {
-                regs: &mut *(0x4006_5000 as *mut _),
+                None
+            } else {
+                Some(Self {
+                    regs: &mut *(0x4006_5000 as *mut _),
+                })
             }
         }
     }
 
     /// Enable the internal oscillator with the specified capacitance
-    ///
-    /// # Panics
-    /// This method will panic if the provided capacitance cannot be
-    /// represented in the MCU register.
-    pub fn enable(&mut self, capacitance: u8) -> Option<OscToken> {
+    pub fn enable(&mut self, capacitance: u8) -> Result<OscToken, Error> {
         if capacitance % 2 == 1 || capacitance > 30 {
-            panic!("Invalid capacitance value");
+            return Err(Error::InvalidCapacitance);
         }
 
         let mut cr = self.regs.cr.read();
         if cr.get_bit(7) {
-            None
+            Err(Error::AlreadyEnabled)
         } else {
             cr.set_bit(7, true);
             cr.set_bit(3, capacitance.get_bit(1));
@@ -64,7 +70,7 @@ impl Osc {
 
             self.regs.cr.write(cr);
 
-            Some(OscToken { _private: () })
+            Ok(OscToken { _private: () })
         }
     }
 }

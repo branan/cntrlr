@@ -22,6 +22,15 @@ pub enum SerialError {
 
     /// The serial port cannot be enabled because its TX or RX pin is in use
     PinInUse,
+
+    /// The serial port cannot be enabled because its PORT is in use
+    PortInUse,
+
+    /// The serial port cannot be enabled because its UART is in use
+    UartInUse,
+
+    /// The serial port cannot be enabled because the SIM is in use
+    SimInUse,
 }
 
 /// A serial instance

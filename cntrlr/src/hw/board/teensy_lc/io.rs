@@ -40,14 +40,19 @@ impl io::Serial for Serial<Mkl26Z64, Serial1Tx, Serial1Rx, 0> {
 
     fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
         let divisor = (super::CPU_FREQ.load(Ordering::Relaxed) as usize * 32) / (baud * 16);
-        let mut uart = Sim::get().enable_peripheral::<Uart<(), (), 0>>();
+        let mut uart = Sim::get()
+            .ok_or(SerialError::SimInUse)?
+            .enable_peripheral::<Uart<(), (), 0>>()
+            .ok_or(SerialError::UartInUse)?;
         uart.set_divisor(divisor);
 
         let tx = super::digital::port_b()
+            .ok_or(SerialError::PortInUse)?
             .pin::<17>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_tx();
         let rx = super::digital::port_b()
+            .ok_or(SerialError::PortInUse)?
             .pin::<16>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
@@ -69,14 +74,19 @@ impl io::Serial for Serial<Mkl26Z64, Serial2Tx, Serial2Rx, 1> {
 
     fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
         let divisor = (super::CPU_FREQ.load(Ordering::Relaxed) as usize * 32) / (baud * 16);
-        let mut uart = Sim::get().enable_peripheral::<Uart<(), (), 1>>();
+        let mut uart = Sim::get()
+            .ok_or(SerialError::SimInUse)?
+            .enable_peripheral::<Uart<(), (), 1>>()
+            .ok_or(SerialError::UartInUse)?;
         uart.set_divisor(divisor);
 
         let tx = super::digital::port_c()
+            .ok_or(SerialError::PortInUse)?
             .pin::<4>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_tx();
         let rx = super::digital::port_c()
+            .ok_or(SerialError::PortInUse)?
             .pin::<3>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
@@ -98,14 +108,19 @@ impl io::Serial for Serial<Mkl26Z64, Serial3Tx, Serial3Rx, 2> {
 
     fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
         let divisor = (super::BUS_FREQ.load(Ordering::Relaxed) as usize * 32) / (baud * 16);
-        let mut uart = Sim::get().enable_peripheral::<Uart<(), (), 2>>();
+        let mut uart = Sim::get()
+            .ok_or(SerialError::SimInUse)?
+            .enable_peripheral::<Uart<(), (), 2>>()
+            .ok_or(SerialError::UartInUse)?;
         uart.set_divisor(divisor);
 
         let tx = super::digital::port_d()
+            .ok_or(SerialError::PortInUse)?
             .pin::<3>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_tx();
         let rx = super::digital::port_d()
+            .ok_or(SerialError::PortInUse)?
             .pin::<2>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();

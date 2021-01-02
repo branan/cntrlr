@@ -37,29 +37,29 @@ static LOCKS: [Flag; 2] = [Flag::new(false), Flag::new(false)];
 
 impl Uart<Fe310G002, (), (), 0> {
     /// Get UART instance 0
-    pub fn get() -> Self {
+    pub fn get() -> Option<Self> {
         unsafe { Self::do_get(0x1001_3000) }
     }
 }
 
 impl Uart<Fe310G002, (), (), 1> {
     /// Get UARt instance 1
-    pub fn get() -> Self {
+    pub fn get() -> Option<Self> {
         unsafe { Self::do_get(0x1002_3000) }
     }
 }
 
 impl<M, const N: usize> Uart<M, (), (), N> {
-    unsafe fn do_get(addr: usize) -> Self {
+    unsafe fn do_get(addr: usize) -> Option<Self> {
         if LOCKS[N].swap(true, Ordering::Acquire) {
-            panic!("Lock contention");
-        }
-
-        Self {
-            regs: &mut *(addr as *mut _),
-            tx: (),
-            rx: (),
-            mcu: PhantomData,
+            None
+        } else {
+            Some(Self {
+                regs: &mut *(addr as *mut _),
+                tx: (),
+                rx: (),
+                mcu: PhantomData,
+            })
         }
     }
 

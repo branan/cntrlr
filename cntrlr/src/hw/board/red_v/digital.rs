@@ -103,26 +103,26 @@ impl PinOp for ModeOp {
 #[inline]
 pub fn pin_op<Op: PinOp>(pin: usize, arg: Op::Arg) -> Option<Op::Result> {
     match pin {
-        0 => Op::do_op(gpio().pin::<16>(), arg),
-        1 => Op::do_op(gpio().pin::<17>(), arg),
-        2 => Op::do_op(gpio().pin::<18>(), arg),
-        3 => Op::do_op(gpio().pin::<19>(), arg),
-        4 => Op::do_op(gpio().pin::<20>(), arg),
-        5 => Op::do_op(gpio().pin::<21>(), arg),
-        6 => Op::do_op(gpio().pin::<22>(), arg),
-        7 => Op::do_op(gpio().pin::<23>(), arg),
-        8 => Op::do_op(gpio().pin::<0>(), arg),
-        9 => Op::do_op(gpio().pin::<1>(), arg),
-        10 => Op::do_op(gpio().pin::<2>(), arg),
-        11 => Op::do_op(gpio().pin::<3>(), arg),
-        12 => Op::do_op(gpio().pin::<4>(), arg),
-        13 => Op::do_op(gpio().pin::<5>(), arg),
+        0 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<16>()), arg),
+        1 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<17>()), arg),
+        2 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<18>()), arg),
+        3 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<19>()), arg),
+        4 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<20>()), arg),
+        5 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<21>()), arg),
+        6 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<22>()), arg),
+        7 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<23>()), arg),
+        8 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<0>()), arg),
+        9 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<1>()), arg),
+        10 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<2>()), arg),
+        11 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<3>()), arg),
+        12 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<4>()), arg),
+        13 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<5>()), arg),
         // Pin 14 is absent on this board
-        15 => Op::do_op(gpio().pin::<9>(), arg),
-        16 => Op::do_op(gpio().pin::<10>(), arg),
-        17 => Op::do_op(gpio().pin::<11>(), arg),
-        18 => Op::do_op(gpio().pin::<12>(), arg),
-        19 => Op::do_op(gpio().pin::<13>(), arg),
+        15 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<9>()), arg),
+        16 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<10>()), arg),
+        17 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<11>()), arg),
+        18 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<12>()), arg),
+        19 => Op::do_op(gpio().and_then(|gpio| gpio.pin::<13>()), arg),
         _ => None,
     }
 }
@@ -183,7 +183,7 @@ pub fn pin_mode(pin: usize, mode: PinMode) {
 ///
 /// The global instance of the GPIO, used to share ownership among
 /// different board modules.
-pub fn gpio() -> &'static Gpio<0> {
+pub fn gpio() -> Option<&'static Gpio<0>> {
     static PORT: Once<Gpio<0>> = Once::new();
-    PORT.get_or_init(|| Gpio::get())
+    PORT.get_or_try_init(|| Gpio::get())
 }

@@ -182,9 +182,9 @@ impl<T> Once<T> {
     }
 
     /// Initialize the stored value if needed, then return it.
-    pub fn get_or_init<F>(&self, f: F) -> &T
+    pub fn get_or_try_init<F>(&self, f: F) -> Option<&T>
     where
-        F: FnOnce() -> T,
+        F: FnOnce() -> Option<T>,
     {
         unsafe {
             match self.state.load(Ordering::Acquire) {
@@ -192,15 +192,18 @@ impl<T> Once<T> {
                 UNINIT => match self.state.swap(IN_PROGRESS, Ordering::Acquire) {
                     IN_PROGRESS => panic!("Lock contention"),
                     UNINIT => {
-                        let value = f();
-                        *self.value.get() = Some(value);
-                        self.state.store(INIT, Ordering::Release);
+                        if let Some(value) = f() {
+                            *self.value.get() = Some(value);
+                            self.state.store(INIT, Ordering::Release);
+                        } else {
+                            self.state.store(UNINIT, Ordering::Release);
+                        }
                     }
                     _ => {}
                 },
                 _ => {}
             }
-            (&*self.value.get()).as_ref().unwrap()
+            (&*self.value.get()).as_ref()
         }
     }
 }

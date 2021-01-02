@@ -53,21 +53,22 @@ impl Spi<Fe310G002, (), (), 0> {
     /// Get SPI instance 0
     ///
     /// Instance 0 is the QSPI flash controller.
-    pub fn get() -> Self {
+    pub fn get() -> Option<Self> {
         unsafe { Self::do_get(0x1001_4000) }
     }
 }
 
 impl<M, const N: usize> Spi<M, (), (), N> {
-    unsafe fn do_get(addr: usize) -> Self {
+    unsafe fn do_get(addr: usize) -> Option<Self> {
         if LOCKS[N].swap(true, Ordering::Acquire) {
-            panic!("Lock contention");
-        }
-        Self {
-            regs: &mut *(addr as *mut _),
-            _tx: (),
-            _rx: (),
-            _mcu: PhantomData,
+            None
+        } else {
+            Some(Self {
+                regs: &mut *(addr as *mut _),
+                _tx: (),
+                _rx: (),
+                _mcu: PhantomData,
+            })
         }
     }
 

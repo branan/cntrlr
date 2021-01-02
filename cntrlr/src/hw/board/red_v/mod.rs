@@ -15,32 +15,48 @@ pub mod time;
 
 static CPU_FREQ: AtomicUsize = AtomicUsize::new(0);
 
+/// Error type for [`set_clock()`]
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum SetClockError {
+    /// The core clock cannot be changed because the Clock Interface is in use
+    PrciInUse,
+
+    /// The core clock cannot be set because the requested speed is invalid.
+    InvalidClockRate,
+}
+
 /// Set the clock for the board, in Hz.
 ///
 /// Valid valies are 256 or 384 MHz
-pub fn set_clock(clock: usize) {
+pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
     use crate::hw::mcu::sifive::fe310g002::{Prci, Spi};
 
     let (r, f, q, div, spi_div) = match clock {
         384_000_000 => (2, 96, 2, 1, 8),
         256_000_000 => (2, 64, 2, 1, 6),
-        _ => panic!("Invalid clock rate for Red-V: {}", clock),
+        _ => return Err(SetClockError::InvalidClockRate),
     };
     let old_clock = CPU_FREQ.load(Ordering::Relaxed);
-    CPU_FREQ.store(clock, Ordering::Relaxed);
-
     if clock > old_clock {
-        let mut spi = Spi::<(), (), 0>::get();
-        spi.set_divisor(spi_div);
+        // If SPI is in use we have no choice but to hope the user did
+        // the right thing before invoking us.
+        if let Some(mut spi) = Spi::<(), (), 0>::get() {
+            spi.set_divisor(spi_div);
+        }
     }
 
-    let mut prci = Prci::get();
+    let mut prci = Prci::get().ok_or(SetClockError::PrciInUse)?;
     prci.use_pll(r, f, q, div);
 
     if clock < old_clock {
-        let mut spi = Spi::<(), (), 0>::get();
-        spi.set_divisor(spi_div);
+        if let Some(mut spi) = Spi::<(), (), 0>::get() {
+            spi.set_divisor(spi_div);
+        }
     }
+
+    CPU_FREQ.store(clock, Ordering::Relaxed);
+    Ok(())
 }
 
 /// Early init for the Red V board.
@@ -63,7 +79,7 @@ pub unsafe extern "C" fn start() {}
 /// only if you are overriding Cntrlr runtime behavior.
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_board_init")]
 pub unsafe extern "C" fn init() {
-    set_clock(256_000_000);
+    set_clock(256_000_000).expect("Could not set core clock at init");
 
     // external oscillator runs at 32.768KHz. Set up mtimecmp to fire every 1ms
     const MTIMECMP_LO: *mut u32 = 0x0200_4000 as _;

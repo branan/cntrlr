@@ -28,14 +28,15 @@ static LOCK: Flag = Flag::new(false);
 
 impl Prci<Fe310G002> {
     /// Get the PRCI instance
-    pub fn get() -> Self {
+    pub fn get() -> Option<Self> {
         unsafe {
             if LOCK.swap(true, Ordering::Acquire) {
-                panic!("Lock contention");
-            }
-            Self {
-                regs: &mut *(0x1000_8000 as *mut _),
-                _mcu: PhantomData,
+                None
+            } else {
+                Some(Self {
+                    regs: &mut *(0x1000_8000 as *mut _),
+                    _mcu: PhantomData,
+                })
             }
         }
     }
