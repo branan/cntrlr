@@ -90,8 +90,7 @@ pub fn pin_op<Op: PinOp>(pin: usize, arg: Op::Arg) -> Option<Op::Result> {
 
 /// Set a digital pin high or low.
 ///
-/// The digital pins on the Teensy 3.6 are 5V tolerant, but use
-/// 3.3V thresholds.
+/// The digital pins on the Teensy 3.6 are 3.3V.
 ///
 /// If `pin` is not a valid pin, does nothing.
 ///
