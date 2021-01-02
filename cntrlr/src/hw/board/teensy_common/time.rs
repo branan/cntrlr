@@ -25,30 +25,18 @@ pub fn millis() -> usize {
 ///
 /// This task will be slept, and awoken once the number of
 /// milliseconds has pased.
-pub fn sleep_millis(duration: usize) -> impl Future<Output = ()> {
-    let current = millis();
-    let target = current.wrapping_add(duration);
+pub fn sleep_millis(mut duration: usize) -> impl Future<Output = ()> {
+    let mut start = millis();
     poll_fn(move |ctx| {
-        if target < current {
-            // We wrapped - first wait until we loop past zero
-            if millis() >= current {
-                SYSTICK_WAKERS.add(ctx.waker().clone());
-                Poll::Pending
-            } else {
-                if millis() >= target {
-                    Poll::Ready(())
-                } else {
-                    SYSTICK_WAKERS.add(ctx.waker().clone());
-                    Poll::Pending
-                }
-            }
+        let current = millis();
+        let elapsed = current.wrapping_sub(start);
+        if elapsed >= duration {
+            Poll::Ready(())
         } else {
-            if millis() >= target {
-                Poll::Ready(())
-            } else {
-                SYSTICK_WAKERS.add(ctx.waker().clone());
-                Poll::Pending
-            }
+            duration -= elapsed;
+            start = current;
+            SYSTICK_WAKERS.add(ctx.waker().clone());
+            Poll::Pending
         }
     })
 }
