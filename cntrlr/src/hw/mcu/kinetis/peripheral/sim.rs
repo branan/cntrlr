@@ -3,7 +3,7 @@
 
 //! System Integration Module
 
-use super::super::{Mk20Dx128, Mk20Dx256, Mkl26Z64};
+use super::super::{Mk20Dx128, Mk20Dx256, Mk64Fx512, Mkl26Z64};
 use crate::{
     register::{Register, Reserved},
     sync::Flag,
@@ -166,6 +166,32 @@ impl Sim<Mk20Dx256> {
         self.regs.clkdiv[0].update(|clkdiv| {
             clkdiv.set_bits(28..32, core - 1);
             clkdiv.set_bits(24..28, bus - 1);
+            clkdiv.set_bits(16..20, flash - 1);
+        });
+    }
+
+    /// Set the USB dividers.
+    ///
+    /// This method does not verify that the divider values set clock
+    /// rates which are within the MCU's specifications.
+    pub fn set_usb_dividers(&mut self, numerator: u32, denominator: u32) {
+        self.regs.clkdiv[1].update(|clkdiv| {
+            clkdiv.set_bits(0..1, numerator - 1);
+            clkdiv.set_bits(1..4, denominator - 1);
+        })
+    }
+}
+
+impl Sim<Mk64Fx512> {
+    /// Set the main system dividers
+    ///
+    /// This method does not verify that the divider values set clock
+    /// rates which are within the MCU's specifications.
+    pub fn set_dividers(&mut self, core: u32, bus: u32, flex: u32, flash: u32) {
+        self.regs.clkdiv[0].update(|clkdiv| {
+            clkdiv.set_bits(28..32, core - 1);
+            clkdiv.set_bits(24..28, bus - 1);
+            clkdiv.set_bits(20..24, flex - 1);
             clkdiv.set_bits(16..20, flash - 1);
         });
     }
