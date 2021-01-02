@@ -26,13 +26,21 @@ pub fn set_clock(clock: usize) {
         256_000_000 => (2, 64, 2, 1, 6),
         _ => panic!("Invalid clock rate for Red-V: {}", clock),
     };
+    let old_clock = CPU_FREQ.load(Ordering::Relaxed);
     CPU_FREQ.store(clock, Ordering::Relaxed);
 
-    let mut spi = Spi::<(), (), 0>::get();
-    spi.set_divisor(spi_div);
+    if clock > old_clock {
+        let mut spi = Spi::<(), (), 0>::get();
+        spi.set_divisor(spi_div);
+    }
 
     let mut prci = Prci::get();
     prci.use_pll(r, f, q, div);
+
+    if clock < old_clock {
+        let mut spi = Spi::<(), (), 0>::get();
+        spi.set_divisor(spi_div);
+    }
 }
 
 /// Early init for the Red V board.
