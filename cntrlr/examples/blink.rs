@@ -8,11 +8,11 @@ use cntrlr::prelude::*;
 
 #[entry]
 async fn main() -> ! {
-    pin_mode(2, PinMode::Output);
+    pin_mode(13, PinMode::Output);
     loop {
-        digital_write(2, true);
+        digital_write(13, true);
         sleep_millis(500).await;
-        digital_write(2, false);
+        digital_write(13, false);
         sleep_millis(500).await;
     }
 }
