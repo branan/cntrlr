@@ -5,7 +5,7 @@
 
 use super::teensy_common::SetClockError;
 use crate::hw::mcu::kinetis::mkl26z64::{
-    Clock, Mcg, Osc, OscRange, PeripheralClockSource, Sim, SysTick, UsbClockSource, Watchdog,
+    Clock, Mcg, Osc, OscRange, PeripheralClockSource, Sim, SysTick, UartClockSource, UsbClockSource,
 };
 use core::{
     ptr::write_volatile,
@@ -16,6 +16,7 @@ pub mod digital;
 pub mod io;
 pub mod time;
 
+static PLL_FREQ: AtomicUsize = AtomicUsize::new(0);
 static CPU_FREQ: AtomicUsize = AtomicUsize::new(0);
 static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
 
@@ -23,16 +24,17 @@ static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
 ///
 /// Valid values are 48, 32, 24, 16, 12, 8, 6, 4, or 3 MHz
 pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
-    let (core, bus, flash, usb_num, usb_den, pll_num, pll_den) = match clock {
-        48_000_000 => (1, 1, 2, 1, 1, 24, 8),
-        32_000_000 => (3, 3, 3, 1, 2, 24, 4),
-        24_000_000 => (2, 2, 2, 1, 1, 24, 8),
-        16_000_000 => (3, 3, 3, 1, 1, 24, 8),
-        12_000_000 => (4, 4, 4, 1, 1, 24, 8),
-        8_000_000 => (6, 6, 6, 1, 1, 24, 8),
-        6_000_000 => (8, 8, 8, 1, 1, 24, 8),
-        4_000_000 => (12, 12, 12, 1, 1, 24, 8),
-        3_000_000 => (16, 16, 16, 1, 1, 24, 8),
+    // Unlike the other Kinetis MCUs, on this one the bus clock is
+    // derived from the CPU clock, so its dividers are calculated
+    // slightly differently.
+    let (core, bus, pll_num, pll_den) = match clock {
+        48_000_000 => (2, 2, 24, 4),
+        32_000_000 => (3, 2, 24, 4),
+        24_000_000 => (4, 1, 24, 4),
+        16_000_000 => (6, 1, 24, 4),
+        12_000_000 => (8, 1, 24, 4),
+        8_000_000 => (12, 1, 24, 4),
+        6_000_000 => (16, 1, 24, 4),
         _ => return Err(SetClockError::InvalidClockRate),
     };
 
@@ -55,8 +57,7 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
     };
 
     // Next, update the main dividers for our new clock rate
-    sim.set_dividers(core, bus, flash);
-    sim.set_usb_dividers(usb_num, usb_den);
+    sim.set_dividers(core, bus);
 
     // Finally, re-enable the PLL at our preferred speed
     fbe.enable_pll(pll_num, pll_den)
@@ -65,6 +66,7 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
 
     // Switch peripherals over to the PLL
     sim.set_usb_source(UsbClockSource::PllFll);
+    sim.set_uart0_source(Some(UartClockSource::PllFll));
     sim.set_peripheral_source(PeripheralClockSource::Pll);
 
     // Reset SysTick for new clock rate.
@@ -76,6 +78,7 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
         systick.enable(true);
     }
 
+    PLL_FREQ.store(clock * core as usize, Ordering::Relaxed);
     CPU_FREQ.store(clock, Ordering::Relaxed);
     BUS_FREQ.store(clock * core as usize / bus as usize, Ordering::Relaxed);
     Ok(())
@@ -90,7 +93,9 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
 /// only if you are overriding Cntrlr runtime behavior.
 #[cfg_attr(board = "teensy_lc", export_name = "__cntrlr_board_start")]
 pub unsafe extern "C" fn start() {
-    Watchdog::get().disable();
+    Sim::get()
+        .expect("Could not acquire SIM to disable watchdog")
+        .disable_cop();
 }
 
 /// Late startup for the Teensy LC board.

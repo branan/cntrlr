@@ -9,9 +9,8 @@
 pub use super::peripheral::mcg::{Clock, Mcg, OscRange};
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
-pub use super::peripheral::sim::{PeripheralClockSource, UsbClockSource};
+pub use super::peripheral::sim::{PeripheralClockSource, UartClockSource, UsbClockSource};
 pub use super::peripheral::systick::SysTick;
-pub use super::peripheral::wdog::Watchdog;
 
 /// A Pin
 pub type Pin<'a, const N: usize, const M: usize> =

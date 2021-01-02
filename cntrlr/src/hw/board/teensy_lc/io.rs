@@ -39,7 +39,8 @@ impl io::Serial for Serial<Mkl26Z64, Serial1Tx, Serial1Rx, 0> {
     type Error = SerialError;
 
     fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
-        let divisor = (super::CPU_FREQ.load(Ordering::Relaxed) as usize * 32) / (baud * 16);
+        let clkin = super::PLL_FREQ.load(Ordering::Relaxed) / 2;
+        let divisor = (clkin * 32) / (baud * 16);
         let mut uart = Sim::get()
             .ok_or(SerialError::SimInUse)?
             .enable_peripheral::<Uart<(), (), 0>>()

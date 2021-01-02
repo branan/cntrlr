@@ -3,6 +3,7 @@
 
 //! System Integration Module
 
+use super::super::{Mk20Dx128, Mk20Dx256, Mkl26Z64};
 use crate::{
     register::{Register, Reserved},
     sync::Flag,
@@ -39,6 +40,9 @@ struct SimRegs {
     clkdiv: [Register<u32>; 2],
     fcfg: [Register<u32>; 2],
     uid: [Register<u32>; 4],
+    _reserved_4: [Reserved<u32>; 40],
+    copc: Register<u32>,
+    srvcop: Register<u32>,
 }
 
 /// The handle to the SIM
@@ -55,6 +59,19 @@ pub enum UsbClockSource {
 
     /// The enebled PLL or FLL
     PllFll,
+}
+
+/// The clock used for UARTs
+#[derive(PartialEq)]
+pub enum UartClockSource {
+    /// The enebled PLL or FLL
+    PllFll,
+
+    /// The external reference clock
+    Oscer,
+
+    /// The internal reference clock
+    Mcgir,
 }
 
 /// The clock used for certain peripherals
@@ -82,29 +99,6 @@ impl<M> Sim<M> {
                 })
             }
         }
-    }
-
-    /// Set the main system dividers
-    ///
-    /// This method does not verify that the divider values set clock
-    /// rates which are within the MCU's specifications.
-    pub fn set_dividers(&mut self, core: u32, bus: u32, flash: u32) {
-        self.regs.clkdiv[0].update(|clkdiv| {
-            clkdiv.set_bits(28..32, core - 1);
-            clkdiv.set_bits(24..28, bus - 1);
-            clkdiv.set_bits(16..20, flash - 1);
-        });
-    }
-
-    /// Set the USB dividers.
-    ///
-    /// This method does not verify that the divider values set clock
-    /// rates which are within the MCU's specifications.
-    pub fn set_usb_dividers(&mut self, numerator: u32, denominator: u32) {
-        self.regs.clkdiv[1].update(|clkdiv| {
-            clkdiv.set_bits(0..1, numerator - 1);
-            clkdiv.set_bits(1..4, denominator - 1);
-        })
     }
 
     /// Set the USB clock source
@@ -135,6 +129,89 @@ impl<M> Sim<M> {
                 Some(P::new(Gate(gate)))
             }
         }
+    }
+}
+
+impl Sim<Mk20Dx128> {
+    /// Set the main system dividers
+    ///
+    /// This method does not verify that the divider values set clock
+    /// rates which are within the MCU's specifications.
+    pub fn set_dividers(&mut self, core: u32, bus: u32, flash: u32) {
+        self.regs.clkdiv[0].update(|clkdiv| {
+            clkdiv.set_bits(28..32, core - 1);
+            clkdiv.set_bits(24..28, bus - 1);
+            clkdiv.set_bits(16..20, flash - 1);
+        });
+    }
+
+    /// Set the USB dividers.
+    ///
+    /// This method does not verify that the divider values set clock
+    /// rates which are within the MCU's specifications.
+    pub fn set_usb_dividers(&mut self, numerator: u32, denominator: u32) {
+        self.regs.clkdiv[1].update(|clkdiv| {
+            clkdiv.set_bits(0..1, numerator - 1);
+            clkdiv.set_bits(1..4, denominator - 1);
+        })
+    }
+}
+
+impl Sim<Mk20Dx256> {
+    /// Set the main system dividers
+    ///
+    /// This method does not verify that the divider values set clock
+    /// rates which are within the MCU's specifications.
+    pub fn set_dividers(&mut self, core: u32, bus: u32, flash: u32) {
+        self.regs.clkdiv[0].update(|clkdiv| {
+            clkdiv.set_bits(28..32, core - 1);
+            clkdiv.set_bits(24..28, bus - 1);
+            clkdiv.set_bits(16..20, flash - 1);
+        });
+    }
+
+    /// Set the USB dividers.
+    ///
+    /// This method does not verify that the divider values set clock
+    /// rates which are within the MCU's specifications.
+    pub fn set_usb_dividers(&mut self, numerator: u32, denominator: u32) {
+        self.regs.clkdiv[1].update(|clkdiv| {
+            clkdiv.set_bits(0..1, numerator - 1);
+            clkdiv.set_bits(1..4, denominator - 1);
+        })
+    }
+}
+
+impl Sim<Mkl26Z64> {
+    /// Set the main system dividers
+    ///
+    /// This method does not verify that the divider values set clock
+    /// rates which are within the MCU's specifications.
+    pub fn set_dividers(&mut self, core: u32, flash: u32) {
+        self.regs.clkdiv[0].update(|clkdiv| {
+            clkdiv.set_bits(28..32, core - 1);
+            clkdiv.set_bits(16..20, flash - 1);
+        });
+    }
+
+    /// Disable the watchdog
+    pub fn disable_cop(&mut self) {
+        self.regs.copc.update(|copc| {
+            copc.set_bits(2..4, 0);
+        });
+    }
+
+    /// Set the Uart0 clock source
+    pub fn set_uart0_source(&mut self, source: Option<UartClockSource>) {
+        let source = match source {
+            None => 0,
+            Some(UartClockSource::PllFll) => 1,
+            Some(UartClockSource::Oscer) => 2,
+            Some(UartClockSource::Mcgir) => 3,
+        };
+        self.regs.sopt2.update(|sopt2| {
+            sopt2.set_bits(26..28, source);
+        });
     }
 }
 
