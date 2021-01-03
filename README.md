@@ -1,10 +1,10 @@
-# - Cntrlr - Simple, asynchronous embedded
+# Cntrlr - Simple, asynchronous embedded
 
 [![Crates.io](https://img.shields.io/crates/v/cntrlr)](https://crates.io/crates/cntrlr)
 [![Crates.io](https://img.shields.io/crates/l/cntrlr)](https://github.com/branan/cntrlr/blob/master/COPYING)
 [![Docs.rs](https://docs.rs/cntrlr/badge.svg)](https://docs.rs/cntrlr)
 
-Cntrlr is an all-in-one embedded platform for writin simple
+Cntrlr is an all-in-one embedded platform for writing simple
 asynchronous applications on top of common hobbyist development
 boards.
 
@@ -78,7 +78,8 @@ number of Rust compiler issues.
 
 ### Additional Feature Support
 
-* SPI and I2C serial support
-* USB support
+* SPI and I2C serial
 * Analog read & write
-* PWM support
+* PWM
+* SD Cards
+* USB
