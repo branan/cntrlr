@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright 2020 Branan Riley <me@branan.info>
 
-//! An Arduino-style library for simple asynchronous embedded programming
+//! A library for simple asynchronous embedded programming
 //!
 //! ```
 //! use cntrlr::prelude::*;
@@ -14,6 +14,18 @@
 //!    pending().await
 //! }
 //! ```
+//!
+//! For an API overview, check the [`prelude`] module. This is the
+//! core set of functionality provided by Cntrlr, and provides
+//! functionality for most applications.
+//!
+//! For hardware-specific functionality, each supported board and
+//! microcontroller has its own module under [`hw`]. Note that there
+//! are currently both safety and ergonomics issues with these
+//! lower-level APIs, and they don't provide much more functionality
+//! than what is needed to implement the main Cntrlr API. They will be
+//! expanded as time goes on, and will be improved for correcntess and
+//! usability.
 
 #![no_std]
 #![allow(incomplete_features)]

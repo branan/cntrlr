@@ -25,6 +25,22 @@ async fn main() -> ! {
 }
 ```
 
+## Project Goals
+
+The primary goal of Cntrlr is to provide a prototyping environment for
+hobbyists. This generally means that functionality should be simple
+and automatic, but provide escape hatches to directly access hardware
+for more complex uses.
+
+A secondary goal is to explore the API space afforded by Rust's type
+system. This also ties into the first goal, since high-level APIs must
+be designed in a way that allows for low-level access to the hardware
+by user applications.
+
+It is explicitly a non-goal to move away from nightly Rust. Cntrlr's
+goals mean it needs the flexibility to bring in new nightly features
+when it makes sense for the API.
+
 ## Getting Started
 
 Cntrlr currently requires a recent nightly Rust compiler. The best way
@@ -42,6 +58,12 @@ cargo +nightly cntrlr flash --board=<board>
 
 For the list of supported boards, run `cargo cntrlr flash --board=help`
 
+### The nighty requirement
+
+Cntrlr uses a number of rust nightly features. Some of these are
+required for the functionality the crate provides, while others are
+used to create a more ergonomic API.
+
 ## Supported Boards
 
 * PJRC Teensy 3.x family, based on NXP/Freescale Kinetis microcontrollers
@@ -50,8 +72,10 @@ For the list of supported boards, run `cargo cntrlr flash --board=help`
     - Teensy 3.2
     - Teensy 3.5
     - Teensy 3.6
-    - Teensy LC
-* Sparkfun Red V, based on the SiFive Freedom microcontroller
+    - Possibly Teensy LC. The bringup code looks good compared to the
+      Teensyduino core, but I don't own an LC to test with at the
+      moment. It may not work.
+* Sparkfun Red V, based on the SiFive Freedom E310 microcontroller
     - The SiFive HiFive1 Rev B (which the Red V is based on) should
       also work, but is untested.
     - The original HiFive1 will mostly likely not work without being

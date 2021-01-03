@@ -21,7 +21,7 @@ static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
 
 /// Set the clock for this board, in Hz.
 ///
-/// Valid values are 96, 72, 48, 32, 24, 16, 12, 8, 6, 4, or 3 MHz
+/// Valid values are 120, 96, 72, 48, 32, 24, 16, 12, 8, 6, 4, or 3 MHz
 pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
     let (core, bus, flex, flash, usb_num, usb_den, pll_num, pll_den) = match clock {
         120_000_000 => (1, 2, 3, 5, 2, 5, 30, 4),

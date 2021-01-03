@@ -555,7 +555,6 @@ fn main() -> Result<()> {
         println!("teensy_32");
         println!("teensy_35");
         println!("teensy_36");
-        println!("teensy_lc");
         return Ok(());
     }
 

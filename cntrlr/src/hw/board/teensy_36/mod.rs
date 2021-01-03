@@ -21,7 +21,11 @@ static BUS_FREQ: AtomicUsize = AtomicUsize::new(0);
 
 /// Set the clock for this board, in Hz.
 ///
-/// Valid values are 96, 72, 48, 32, 24, 16, 12, 8, 6, 4, or 3 MHz
+/// Valid values are 256, 240, 216, 192, 180, 168, 144, 120, 96, 72,
+/// 48, 32, 24, 16, or 12 MHz.
+///
+/// Values above 120MHz will cause the board to function incorrectly
+/// due to missing HSRUN support.
 pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
     // MK66 has a secret divide by two on the PLL output, so our
     // dividers look a little weird
