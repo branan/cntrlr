@@ -9,6 +9,7 @@
 pub use super::peripheral::mcg::OscRange;
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
+pub use super::peripheral::sim::{PeripheralClockSource, UsbClockSource};
 pub use super::peripheral::systick::SysTick;
 pub use super::peripheral::wdog::Watchdog;
 
@@ -27,6 +28,9 @@ pub type Port<const N: usize> = super::peripheral::port::Port<super::Mk66Fx1M0, 
 
 /// The System Integration Module
 pub type Sim = super::peripheral::sim::Sim<super::Mk66Fx1M0>;
+
+/// The System Mode Controller
+pub type Smc = super::peripheral::smc::Smc<super::Mk66Fx1M0>;
 
 /// A UART instance
 pub type Uart<T, R, const N: usize> = super::peripheral::uart::Uart<super::Mk66Fx1M0, T, R, N>;

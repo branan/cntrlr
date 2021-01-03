@@ -3,7 +3,10 @@
 
 //! Multipurpose Clock Generator
 
-use super::osc::OscToken;
+use super::{
+    super::{Mk20Dx128, Mk20Dx256, Mk64Fx512, Mk66Fx1M0, Mkl26Z64},
+    osc::OscToken,
+};
 use crate::{
     register::{Register, Reserved},
     sync::Flag,
@@ -251,27 +254,69 @@ impl<'a, M> Fei<'a, M> {
     }
 }
 
-impl<'a, M> Fbe<'a, M> {
+macro_rules! fbe {
+    ($m:ident) => {
+        impl<'a> Fbe<'a, $m> {
+            /// Enable the PLL and switch to PBE mode
+            ///
+            /// This method does not protect you from selecting clock
+            /// frequencies which are outside of the acceptable range for the
+            /// MCU. Be careful!
+            pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a, $m>, Error> {
+                if numerator < 24 || numerator > 55 {
+                    return Err(Error::InvalidDivider);
+                }
+
+                if denominator < 1 || denominator > 25 {
+                    return Err(Error::InvalidDivider);
+                }
+
+                self.0.regs.c5.update(|c5| {
+                    c5.set_bits(0..5, denominator - 1);
+                });
+
+                self.0.regs.c6.update(|c6| {
+                    c6.set_bits(0..6, numerator - 24);
+                    c6.set_bit(6, true);
+                });
+
+                // Wait for PLL to be enabled, using the crystal oscillator
+                while !self.0.regs.s.read().get_bit(5) {}
+                // Wait for the PLL to be "locked" and stable
+                while !self.0.regs.s.read().get_bit(6) {}
+
+                Ok(Pbe(self.0))
+            }
+        }
+    };
+}
+
+fbe!(Mk20Dx128);
+fbe!(Mk20Dx256);
+fbe!(Mk64Fx512);
+fbe!(Mkl26Z64);
+
+impl<'a> Fbe<'a, Mk66Fx1M0> {
     /// Enable the PLL and switch to PBE mode
     ///
     /// This method does not protect you from selecting clock
     /// frequencies which are outside of the acceptable range for the
     /// MCU. Be careful!
-    pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a, M>, Error> {
-        if numerator < 24 || numerator > 55 {
+    pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a, Mk66Fx1M0>, Error> {
+        if numerator < 16 || numerator > 47 {
             return Err(Error::InvalidDivider);
         }
 
-        if denominator < 1 || denominator > 25 {
+        if denominator < 1 || denominator > 7 {
             return Err(Error::InvalidDivider);
         }
 
         self.0.regs.c5.update(|c5| {
-            c5.set_bits(0..5, denominator - 1);
+            c5.set_bits(0..4, denominator - 1);
         });
 
         self.0.regs.c6.update(|c6| {
-            c6.set_bits(0..6, numerator - 24);
+            c6.set_bits(0..5, numerator - 16);
             c6.set_bit(6, true);
         });
 

@@ -17,6 +17,9 @@ pub enum SetClockError {
     /// The core clock cannot be changed because the integration module is in use.
     SimInUse,
 
+    /// The core clock cannot be changed because the system mode controller is in use.
+    SmcInUse,
+
     /// The core clock cannot be changed because the oscillator is in use.
     OscInUse,
 
