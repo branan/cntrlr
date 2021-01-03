@@ -24,6 +24,9 @@ pub enum SetClockError {
 
     /// The core clock cannot be set because the requested speed is invalid.
     InvalidClockRate,
+
+    /// There was an error initializing the prci
+    Prci(crate::hw::mcu::sifive::peripheral::prci::Error),
 }
 
 /// Set the clock for the board, in Hz.
@@ -47,7 +50,7 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
     }
 
     let mut prci = Prci::get().ok_or(SetClockError::PrciInUse)?;
-    prci.use_pll(r, f, q, div);
+    prci.use_pll(r, f, q, div).map_err(SetClockError::Prci)?;
 
     if clock < old_clock {
         if let Some(mut spi) = Spi::<(), (), 0>::get() {
@@ -68,7 +71,7 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
 /// Cntrlr runtime. It should be invoked directly as part of startup
 /// only if you are overriding Cntrlr runtime behavior.
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_board_start")]
-pub unsafe extern "C" fn start() {}
+pub extern "C" fn start() {}
 
 /// Late startup for the Red V board
 ///
@@ -77,6 +80,10 @@ pub unsafe extern "C" fn start() {}
 /// This will be included automatically if you are using the standard
 /// Cntrlr runtime. It should be invoked directly as part of startup
 /// only if you are overriding Cntrlr runtime behavior.
+///
+/// # Safety
+/// This function unsafely accesses the RISC-V timer and
+/// interrupt-related CSRs
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_board_init")]
 pub unsafe extern "C" fn init() {
     set_clock(256_000_000).expect("Could not set core clock at init");
@@ -112,6 +119,10 @@ pub unsafe extern "C" fn init() {
 ///
 /// This initializes the stack pointer and trap vector, then invokes
 /// the Cntrlr reset function.
+///
+/// # Safety
+/// This function should never be called by user code; it is public
+/// only for linking reasons.
 #[cfg_attr(board = "red_v", link_section = ".__CNTRLR_START")]
 #[cfg_attr(board = "red_v", export_name = "__cntrlr_redv_reset")]
 #[cfg_attr(board = "red_v", naked)]
@@ -136,6 +147,10 @@ pub unsafe extern "C" fn reset() {
 /// This loads `mcause`, `mepc`, and `mtval` into `t0`, `t1`, and `t2`
 /// respectively, then hangs. It is suitable as a first trap function
 /// for before any initalization has been completed.
+///
+/// # Safety
+/// This function should never be called by user code directly. It is
+/// intended only to be written to `mtvec`.
 #[cfg_attr(board = "red_v", link_section = ".__CNTRLR_EARLY_TRAP")]
 #[cfg_attr(board = "red_v", naked)]
 pub unsafe extern "C" fn early_trap() {
@@ -155,6 +170,10 @@ pub unsafe extern "C" fn early_trap() {
 ///
 /// This function dispatches traps as appropriate to the various
 /// module-specific interrupt handlers.
+///
+/// # Safety
+/// This function should never be called by user code directly. It is
+/// intended only to be written to `mtvec`.
 #[cfg_attr(board = "red_v", link_section = ".__CNTRLR_TRAP")]
 #[cfg_attr(board = "red_v", naked)]
 #[allow(dead_code)]

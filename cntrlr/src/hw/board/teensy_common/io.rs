@@ -52,7 +52,7 @@ where
 
     fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::Future<'a> {
         poll_fn(move |ctx| {
-            if buf.len() == 0 {
+            if buf.is_empty() {
                 return Poll::Ready(Ok(0));
             }
 
@@ -90,17 +90,17 @@ where
 
     fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::Future<'a> {
         poll_fn(move |ctx| {
-            if buf.len() == 0 {
+            if buf.is_empty() {
                 return Poll::Ready(Ok(0));
             }
 
             let mut count = 0;
             let mut buf = buf;
             let uart = self.0.as_mut().ok_or(SerialError::NotEnabled)?;
-            while let Some(_) = uart.write_data(buf[0]) {
+            while uart.write_data(buf[0]) {
                 count += 1;
                 buf = &buf[1..];
-                if buf.len() == 0 {
+                if buf.is_empty() {
                     break;
                 }
             }
@@ -116,6 +116,7 @@ where
         })
     }
 
+    #[allow(clippy::needless_lifetimes)] // This lint is incorrect for GATs
     fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a> {
         poll_fn(move |ctx| {
             let uart = self.0.as_mut().ok_or(SerialError::NotEnabled)?;

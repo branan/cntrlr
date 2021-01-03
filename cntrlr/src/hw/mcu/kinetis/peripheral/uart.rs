@@ -157,13 +157,13 @@ impl<M, T, R: UartRx<M, N>, const N: usize> Uart<M, T, R, N> {
 impl<M, T: UartTx<M, N>, R, const N: usize> Uart<M, T, R, N> {
     /// Send a byte to the UART.
     ///
-    /// If the UART is not ready, behavior is unspecified.
-    pub fn write_data(&mut self, data: u8) -> Option<()> {
+    /// Returns `false` if the data could not be written
+    pub fn write_data(&mut self, data: u8) -> bool {
         if self.regs.s1.read().get_bit(7) {
             self.regs.d.write(data);
-            Some(())
+            true
         } else {
-            None
+            false
         }
     }
 

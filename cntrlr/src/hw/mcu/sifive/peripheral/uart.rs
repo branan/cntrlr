@@ -128,13 +128,13 @@ impl<M, T, R: UartRx<M, N>, const N: usize> Uart<M, T, R, N> {
 impl<M, T: UartTx<M, N>, R, const N: usize> Uart<M, T, R, N> {
     /// Write a byte to the UART
     ///
-    /// Returns `None` if the byte cannot be written
-    pub fn write_data(&mut self, data: u8) -> Option<()> {
+    /// Returns `false` if the byte cannot be written
+    pub fn write_data(&mut self, data: u8) -> bool {
         if self.regs.txdata.read().get_bit(31) {
-            None
+            false
         } else {
             self.regs.txdata.write(data as u32);
-            Some(())
+            true
         }
     }
 

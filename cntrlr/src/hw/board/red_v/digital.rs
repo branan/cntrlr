@@ -77,9 +77,8 @@ impl PinOp for ModeOp {
                 pin.set_output(false);
             }
             PinMode::PulledInput(pull) => {
-                match pull {
-                    Pull::Up => pin.enable_pullup(true),
-                    _ => {}
+                if let Pull::Up = pull {
+                    pin.enable_pullup(true);
                 }
                 pin.set_output(false);
             }
@@ -185,5 +184,5 @@ pub fn pin_mode(pin: usize, mode: PinMode) {
 /// different board modules.
 pub fn gpio() -> Option<&'static Gpio<0>> {
     static PORT: Once<Gpio<0>> = Once::new();
-    PORT.get_or_try_init(|| Gpio::get())
+    PORT.get_or_try_init(Gpio::get)
 }

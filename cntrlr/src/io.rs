@@ -53,6 +53,7 @@ pub trait Write {
     ///
     /// On devices which do not support this operation, this function
     /// does nothing.
+    #[allow(clippy::needless_lifetimes)] // this lint is incorrect for GATs
     fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>;
 }
 
@@ -85,7 +86,7 @@ impl<T: Read + 'static> ReadExt for T {
     fn read_exact<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ExactFuture<'a> {
         async move {
             let mut buf = buf;
-            while buf.len() > 0 {
+            while !buf.is_empty() {
                 let read = self.read(buf).await?;
                 buf = &mut buf[read..];
             }
@@ -98,13 +99,13 @@ impl<T: Read + 'static> ReadExt for T {
             let buf = unsafe { buf.as_mut_vec() };
             loop {
                 let mut byte = [0];
-                self.read(&mut byte).await.map_err(|e| LineError::Read(e))?;
+                self.read(&mut byte).await.map_err(LineError::Read)?;
                 buf.push(byte[0]);
                 if byte[0] == b'\n' {
                     break;
                 }
             }
-            let _ = core::str::from_utf8(&buf).map_err(|e| LineError::Utf8(e))?;
+            let _ = core::str::from_utf8(&buf).map_err(LineError::Utf8)?;
             Ok(())
         }
     }
@@ -137,7 +138,7 @@ impl<T: Write + 'static> WriteExt for T {
     fn write_all<'a>(&'a mut self, buf: &'a [u8]) -> Self::AllFuture<'a> {
         async move {
             let mut buf = buf;
-            while buf.len() > 0 {
+            while !buf.is_empty() {
                 let written = self.write(buf).await?;
                 buf = &buf[written..];
             }

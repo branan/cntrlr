@@ -50,6 +50,7 @@ impl Flag {
     /// Store a value to the flag.
     ///
     /// See [`core::sync::atomic::AtomicBool::store`]
+    #[allow(clippy::useless_conversion)] // Not useless on every target
     pub fn store(&self, value: bool, ordering: Ordering) {
         self.0.store(value.into(), ordering)
     }
@@ -60,6 +61,7 @@ impl Flag {
     /// Stores a value, returning the previous value
     ///
     /// See [`core::sync::atomic::AtomicBool::swap`]
+    #[allow(clippy::useless_conversion)] // Not useless on every target
     pub fn swap(&self, value: bool, ordering: Ordering) -> bool {
         let out = self.0.swap(value.into(), ordering);
         #[cfg(mcu = "fe310g002")]
@@ -79,6 +81,7 @@ impl Flag {
     /// Stores a value, returning the previous value
     ///
     /// See [`core::sync::atomic::AtomicBool::swap`]
+    #[allow(clippy::useless_conversion)] // Not useless on every target
     pub fn swap(&self, value: bool, ordering: Ordering) -> bool {
         let (load_ordering, store_ordering) = match ordering {
             Ordering::Relaxed => (Ordering::Relaxed, Ordering::Relaxed),

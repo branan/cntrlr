@@ -20,6 +20,10 @@ pub unsafe trait Peripheral<T> {
     const GATE: (usize, usize);
 
     /// Get the instance of this peripheral, gated by `gate`.
+    ///
+    /// # Safety
+    /// The gate must be enabled, and no other references to this
+    /// peripheral may be outstanding.
     unsafe fn new(gate: Gate) -> Self;
 }
 

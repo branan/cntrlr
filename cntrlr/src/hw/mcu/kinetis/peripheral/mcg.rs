@@ -211,7 +211,7 @@ impl<'a, M> Fei<'a, M> {
             while !self.0.regs.s.read().get_bit(1) {}
         }
 
-        let frdiv = if range == OscRange::Low.into() {
+        let frdiv = if range == OscRange::Low {
             match divide {
                 1 => 0,
                 2 => 1,
@@ -263,11 +263,11 @@ macro_rules! fbe {
             /// frequencies which are outside of the acceptable range for the
             /// MCU. Be careful!
             pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a, $m>, Error> {
-                if numerator < 24 || numerator > 55 {
+                if !(24..=55).contains(&numerator) {
                     return Err(Error::InvalidDivider);
                 }
 
-                if denominator < 1 || denominator > 25 {
+                if !(1..=24).contains(&denominator) {
                     return Err(Error::InvalidDivider);
                 }
 
@@ -303,11 +303,11 @@ impl<'a> Fbe<'a, Mk66Fx1M0> {
     /// frequencies which are outside of the acceptable range for the
     /// MCU. Be careful!
     pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a, Mk66Fx1M0>, Error> {
-        if numerator < 16 || numerator > 47 {
+        if !(16..=47).contains(&numerator) {
             return Err(Error::InvalidDivider);
         }
 
-        if denominator < 1 || denominator > 7 {
+        if !(1..=7).contains(&denominator) {
             return Err(Error::InvalidDivider);
         }
 

@@ -62,9 +62,9 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
             let osc_token = Osc::get()
                 .ok_or(SetClockError::OscInUse)?
                 .enable(10)
-                .map_err(|e| SetClockError::Osc(e))?;
+                .map_err(SetClockError::Osc)?;
             fei.use_external(512, OscRange::VeryHigh, Some(osc_token))
-                .map_err(|e| SetClockError::Mcg(e))?
+                .map_err(SetClockError::Mcg)?
         }
         Clock::Fbe(fbe) => fbe,
         Clock::Pbe(pbe) => pbe.disable_pll(),
@@ -84,7 +84,7 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
 
     // Finally, re-enable the PLL at our preferred speed
     fbe.enable_pll(pll_num, pll_den)
-        .map_err(|e| SetClockError::Mcg(e))?
+        .map_err(SetClockError::Mcg)?
         .use_pll();
 
     if clock <= 120_000_000 {
@@ -112,6 +112,9 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
 /// This will be included automatically if you are using the standard
 /// Cntrlr runtime. It should be invoked directly as part of startup
 /// only if you are overriding Cntrlr runtime behavior.
+///
+/// # Safety
+/// This function unsafely accesses the watchdog peripheral.
 #[cfg_attr(board = "teensy_36", export_name = "__cntrlr_board_start")]
 pub unsafe extern "C" fn start() {
     Watchdog::get().disable();
@@ -125,6 +128,9 @@ pub unsafe extern "C" fn start() {
 /// This will be included automatically if you are using the standard
 /// Cntrlr runtime. It should be invoked directly as part of startup
 /// only if you are overriding Cntrlr runtime behavior.
+///
+/// # Safety
+/// This function unsafely accesses the NVIC peripheral.
 #[cfg_attr(board = "teensy_36", export_name = "__cntrlr_board_init")]
 pub unsafe extern "C" fn init() {
     // Switch systick to core clock and enable the systick
@@ -284,20 +290,3 @@ pub static ARM_EXCEPTIONS: [unsafe extern "C" fn(); 14] = [
     unused_interrupt,
     time::systick_intr,
 ];
-
-unsafe fn enable_led() {
-    use core::ptr::write_volatile;
-    const fn bitband_address<T>(addr: u32, bit: u32) -> *mut T {
-        (0x4200_0000 + (addr - 0x4000_0000) * 32 + bit * 4) as _
-    }
-
-    // The LED is on pin 13, AKA C5
-    const SIM_SCGC5_BIT_11: *mut u32 = bitband_address(0x4004_8038, 11);
-    const PORTC_GPCLR: *mut u32 = 0x4004_B080 as _;
-    const GPIOC_PDDR_BIT_5: *mut u32 = bitband_address(0x400F_F094, 5);
-    const GPIOC_PSOR: *mut u32 = 0x400F_F084 as _;
-    write_volatile(SIM_SCGC5_BIT_11, 1);
-    write_volatile(PORTC_GPCLR, 0x0020_0100); // Switch pin 5 to mux mode 1
-    write_volatile(GPIOC_PDDR_BIT_5, 1);
-    write_volatile(GPIOC_PSOR, 1 << 5);
-}

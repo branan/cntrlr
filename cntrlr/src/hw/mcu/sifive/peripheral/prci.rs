@@ -24,6 +24,14 @@ pub struct Prci<M> {
     _mcu: PhantomData<M>,
 }
 
+/// Error type for PRCI operations
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum Error {
+    /// The specified divider is invalid
+    InvalidDivider,
+}
+
 static LOCK: Flag = Flag::new(false);
 
 impl Prci<Fe310G002> {
@@ -52,20 +60,29 @@ impl<M> Prci<M> {
     /// * `f` must be an even numbe in the range `2..=128`
     /// * `q` must be one of 2, 4, or 8
     /// * `div` must be 1 or be an even number in the range `2..=128`
-    pub fn use_pll(&mut self, r: u32, f: u32, q: u32, div: u32) {
+    pub fn use_pll(&mut self, r: u32, f: u32, q: u32, div: u32) -> Result<(), Error> {
         // TODO: This should be broken down into a nice state machine like
         // the Kinetis MCG
-        assert!(r >= 1 && r <= 4);
+        if !(1..=4).contains(&r) {
+            return Err(Error::InvalidDivider);
+        }
+
+        if !(2..128).contains(&f) || f % 2 != 0 {
+            return Err(Error::InvalidDivider);
+        }
+
+        if (!(2..128).contains(&div) || div % 2 != 0) && div != 1 {
+            return Err(Error::InvalidDivider);
+        }
+
         let r = r - 1;
-        assert!(f >= 2 && f <= 128 && f % 2 == 0);
         let f = f / 2 - 2;
         let q = match q {
             2 => 0b01,
             4 => 0b10,
             8 => 0b11,
-            _ => panic!("Invalid value for Q"),
+            _ => return Err(Error::InvalidDivider),
         };
-        assert!(div == 1 || (div % 2) == 0);
         if self.regs.pllcfg.read().get_bit(16) {
             // Make sure the ring oscillator is enabled and switch to it
             self.regs.hfrosccfg.update(|hfrosccfg| {
@@ -107,6 +124,7 @@ impl<M> Prci<M> {
         self.regs.pllcfg.update(|pllcfg| {
             pllcfg.set_bit(16, true);
         });
+        Ok(())
     }
 }
 

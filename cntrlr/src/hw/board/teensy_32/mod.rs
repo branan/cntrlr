@@ -47,9 +47,9 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
             let osc_token = Osc::get()
                 .ok_or(SetClockError::OscInUse)?
                 .enable(10)
-                .map_err(|e| SetClockError::Osc(e))?;
+                .map_err(SetClockError::Osc)?;
             fei.use_external(512, OscRange::VeryHigh, Some(osc_token))
-                .map_err(|e| SetClockError::Mcg(e))?
+                .map_err(SetClockError::Mcg)?
         }
         Clock::Fbe(fbe) => fbe,
         Clock::Pbe(pbe) => pbe.disable_pll(),
@@ -62,7 +62,7 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
 
     // Finally, re-enable the PLL at our preferred speed
     fbe.enable_pll(pll_num, pll_den)
-        .map_err(|e| SetClockError::Mcg(e))?
+        .map_err(SetClockError::Mcg)?
         .use_pll();
 
     // Switch peripherals over to the PLL
@@ -90,6 +90,9 @@ pub fn set_clock(clock: usize) -> Result<(), SetClockError> {
 /// This will be included automatically if you are using the standard
 /// Cntrlr runtime. It should be invoked directly as part of startup
 /// only if you are overriding Cntrlr runtime behavior.
+///
+/// # Safety
+/// This function unsafely accesses the watchdog peripheral.
 #[cfg_attr(board = "teensy_32", export_name = "__cntrlr_board_start")]
 pub unsafe extern "C" fn start() {
     Watchdog::get().disable();
@@ -103,6 +106,9 @@ pub unsafe extern "C" fn start() {
 /// This will be included automatically if you are using the standard
 /// Cntrlr runtime. It should be invoked directly as part of startup
 /// only if you are overriding Cntrlr runtime behavior.
+///
+/// # Safety
+/// This function unsafely accesses the NVIC peripheral
 #[cfg_attr(board = "teensy_32", export_name = "__cntrlr_board_init")]
 pub unsafe extern "C" fn init() {
     // Switch systick to core clock and enable the systick

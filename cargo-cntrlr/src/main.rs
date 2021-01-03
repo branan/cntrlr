@@ -42,7 +42,7 @@ use std::{
 use subprocess::{Exec, ExitStatus};
 use tempfile::NamedTempFile;
 
-const MAIN: &'static str = "#![no_std]
+const MAIN: &str = "#![no_std]
 #![no_main]
 
 use cntrlr::prelude::*;
@@ -59,14 +59,14 @@ async fn main() -> ! {
 }
 ";
 
-const DEPS: &'static str = "[dependencies]
+const DEPS: &str = "[dependencies]
 cntrlr = \"0.1.0\"
 
 [build-dependencies]
 cntrlr-build = \"0.1.0\"
 ";
 
-const BUILD: &'static str = "
+const BUILD: &str = "
 use cntrlr_build::configure_board;
 
 fn main() {
@@ -374,7 +374,7 @@ fn main() -> Result<()> {
         .get_matches_from(args.iter());
 
     let (command, command_matches) = matches.subcommand();
-    let command_matches = command_matches.ok_or(anyhow!("A subcommand is required"))?;
+    let command_matches = command_matches.ok_or_else(|| anyhow!("A subcommand is required"))?;
 
     let mut config = Config::default()?;
     let verbosity =
@@ -382,7 +382,7 @@ fn main() -> Result<()> {
     let quiet = matches.is_present("quiet") || command_matches.is_present("quiet");
     let color = command_matches
         .value_of("color")
-        .or(matches.value_of("color"));
+        .or_else(|| matches.value_of("color"));
     let frozen = matches.is_present("frozen") || command_matches.is_present("frozen");
     let locked = matches.is_present("locked") || command_matches.is_present("locked");
     let offline = matches.is_present("offline") || command_matches.is_present("offline");
@@ -547,7 +547,7 @@ fn main() -> Result<()> {
 
     let board_name = command_matches
         .value_of("board")
-        .ok_or(anyhow!("Board not specified"))?;
+        .ok_or_else(|| anyhow!("Board not specified"))?;
 
     if board_name == "help" {
         println!("red_v");
@@ -663,14 +663,14 @@ fn main() -> Result<()> {
         let binary = out.binaries[0]
             .1
             .to_str()
-            .ok_or(anyhow!("Binary path is not UTF-8"))?;
+            .ok_or_else(|| anyhow!("Binary path is not UTF-8"))?;
         match board.flash {
             Flash::AvrDude(programmer) => {
                 let avrdude = resolve_executable(&PathBuf::from("avrdude"))?;
                 let flash = format!("-Uflash:w:{}", binary);
                 let port = command_matches
                     .value_of("port")
-                    .ok_or(anyhow!("--port is required to program this board"))?;
+                    .ok_or_else(|| anyhow!("--port is required to program this board"))?;
                 let status = Exec::cmd(avrdude)
                     .arg("-p")
                     .arg(board.mcu)
