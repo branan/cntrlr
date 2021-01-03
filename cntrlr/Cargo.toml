@@ -11,9 +11,6 @@ readme = "README.md"
 repository = "https://github.com/branan/cntrlr"
 version = "0.1.0"
 
-[package.metadata.docs.rs]
-all-features = true
-
 [dependencies]
 bit_field = "0.10.1"
 cntrlr-macros = { path = "../cntrlr-macros", version = "0.1.0" }
@@ -22,4 +19,6 @@ cntrlr-macros = { path = "../cntrlr-macros", version = "0.1.0" }
 cntrlr-build = { version = "0.1.0", path = "../cntrlr-build" }
 
 [features]
+default = ["doc-cfg"]
 doc-cfg = []
+
