@@ -46,15 +46,16 @@ const MAIN: &'static str = "#![no_std]
 #![no_main]
 
 use cntrlr::prelude::*;
-use core::future::pending;
 
 #[entry]
 async fn main() -> ! {
-    serial_1().enable(9600).unwrap();
-    writeln!(serial_1(), \"Hello, World\").await.unwrap();
-
-    // Hang forever once we've sent our message
-    pending().await
+    pin_mode(13, PinMode::Output);
+    loop {
+        digital_write(13, true);
+        sleep_millis(500).await;
+        digital_write(13, false);
+        sleep_millis(500).await;
+    }
 }
 ";
 
