@@ -6,11 +6,17 @@
 //! This is an ARM Cortex-M0 microcontroller produced by NXP. It is
 //! used on the [`Teensy LC`](`crate::hw::board::teensy_lc`) board.
 
-pub use super::peripheral::mcg::{Clock, Mcg, OscRange};
+pub use super::peripheral::mcg::OscRange;
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
 pub use super::peripheral::sim::{PeripheralClockSource, UartClockSource, UsbClockSource};
 pub use super::peripheral::systick::SysTick;
+
+/// The handle to the MCG
+pub type Mcg = super::peripheral::mcg::Mcg<super::Mkl26Z64>;
+
+/// The current mode of the system clock
+pub type Clock<'a> = super::peripheral::mcg::Clock<'a, super::Mkl26Z64>;
 
 /// A Pin
 pub type Pin<'a, const N: usize, const M: usize> =

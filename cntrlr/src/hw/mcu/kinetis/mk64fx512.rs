@@ -6,12 +6,18 @@
 //! This is an ARM Cortex-M4 microcontroller produced by NXP. It is
 //! used on the [`Teensy 3.5`](`crate::hw::board::teensy_35`) board.
 
-pub use super::peripheral::mcg::{Clock, Mcg, OscRange};
+pub use super::peripheral::mcg::OscRange;
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
 pub use super::peripheral::sim::{PeripheralClockSource, UsbClockSource};
 pub use super::peripheral::systick::SysTick;
 pub use super::peripheral::wdog::Watchdog;
+
+/// The handle to the MCG
+pub type Mcg = super::peripheral::mcg::Mcg<super::Mk64Fx512>;
+
+/// The current mode of the system clock
+pub type Clock<'a> = super::peripheral::mcg::Clock<'a, super::Mk64Fx512>;
 
 /// a Pin
 pub type Pin<'a, const N: usize, const M: usize> =

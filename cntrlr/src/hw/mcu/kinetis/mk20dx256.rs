@@ -7,12 +7,18 @@
 //! used on the [`Teensy 3.1 and 3.2`](`crate::hw::board::teensy_32`)
 //! boards.
 
-pub use super::peripheral::mcg::{Clock, Mcg, OscRange};
+pub use super::peripheral::mcg::OscRange;
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
 pub use super::peripheral::sim::{PeripheralClockSource, UsbClockSource};
 pub use super::peripheral::systick::SysTick;
 pub use super::peripheral::wdog::Watchdog;
+
+/// The handle to the MCG
+pub type Mcg = super::peripheral::mcg::Mcg<super::Mk20Dx256>;
+
+/// The current mode of the system clock
+pub type Clock<'a> = super::peripheral::mcg::Clock<'a, super::Mk20Dx256>;
 
 /// A pin
 pub type Pin<'a, const N: usize, const M: usize> =

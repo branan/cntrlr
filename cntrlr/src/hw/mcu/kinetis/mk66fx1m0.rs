@@ -6,11 +6,17 @@
 //! This is an ARM Cortex-M4F microcontroller produced by NXP. It is
 //! used on the [`Teensy 3.6`](`crate::hw::board::teensy_36`) board.
 
-pub use super::peripheral::mcg::{Clock, Mcg, OscRange}; // TODO: MK66 has a different MCG
+pub use super::peripheral::mcg::OscRange;
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
 pub use super::peripheral::systick::SysTick;
 pub use super::peripheral::wdog::Watchdog;
+
+/// The handle to the MCG
+pub type Mcg = super::peripheral::mcg::Mcg<super::Mk66Fx1M0>;
+
+/// The current mode of the system clock
+pub type Clock<'a> = super::peripheral::mcg::Clock<'a, super::Mk66Fx1M0>;
 
 /// A Pin
 pub type Pin<'a, const N: usize, const M: usize> =

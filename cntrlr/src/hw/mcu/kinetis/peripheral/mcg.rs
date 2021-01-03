@@ -9,7 +9,7 @@ use crate::{
     sync::Flag,
 };
 use bit_field::BitField;
-use core::sync::atomic::Ordering;
+use core::{marker::PhantomData, sync::atomic::Ordering};
 
 #[repr(C)]
 struct McgRegs {
@@ -30,8 +30,9 @@ struct McgRegs {
 }
 
 /// The handle to the MCG
-pub struct Mcg {
+pub struct Mcg<M> {
     regs: &'static mut McgRegs,
+    _mcu: PhantomData<M>,
 }
 
 /// FLL Enabled, Internal reference
@@ -40,42 +41,42 @@ pub struct Mcg {
 /// in turn referenced to the internal low-accuracy oscillator.
 ///
 /// This is the default mode at system reset.
-pub struct Fei<'a>(&'a mut Mcg);
+pub struct Fei<'a, M>(&'a mut Mcg<M>);
 
 /// FLL Bypassed, External reference
 ///
 /// In FBE mode, the system clock will be running off of the
 /// external reference with a divider as set by the argument to
 /// this method. The FLL is enabled, but not in use.
-pub struct Fbe<'a>(&'a mut Mcg);
+pub struct Fbe<'a, M>(&'a mut Mcg<M>);
 
 /// PLL Bypassed, External reference
 ///
 /// In FBE mode, the system clock will be running off of the
 /// external reference with a divider as set by the argument to
 /// this method. The PLL is enabled, but not in use.
-pub struct Pbe<'a>(&'a mut Mcg);
+pub struct Pbe<'a, M>(&'a mut Mcg<M>);
 
 /// PLL Enabled, External reference
 ///
 /// In PEE mode, the system clock is running off of the PLL, which is
 /// in turn referenced to the external oscillator.
-pub struct Pee<'a>(&'a mut Mcg);
+pub struct Pee<'a, M>(&'a mut Mcg<M>);
 
 /// The current mode of the system clock.
 #[non_exhaustive]
-pub enum Clock<'a> {
+pub enum Clock<'a, M> {
     /// FEI mode
-    Fei(Fei<'a>),
+    Fei(Fei<'a, M>),
 
     /// FBE mode
-    Fbe(Fbe<'a>),
+    Fbe(Fbe<'a, M>),
 
     /// PBE mode
-    Pbe(Pbe<'a>),
+    Pbe(Pbe<'a, M>),
 
     /// PEE mode
-    Pee(Pee<'a>),
+    Pee(Pee<'a, M>),
 }
 
 /// Error type for MCG operations
@@ -88,7 +89,7 @@ pub enum Error {
 
 static LOCK: Flag = Flag::new(false);
 
-impl Mcg {
+impl<M> Mcg<M> {
     /// Get the handdle to the MCG
     ///
     /// Returns `None` if the MCG is already in use.
@@ -99,6 +100,7 @@ impl Mcg {
             } else {
                 Some(Self {
                     regs: &mut *(0x4006_4000 as *mut _),
+                    _mcu: PhantomData,
                 })
             }
         }
@@ -109,7 +111,7 @@ impl Mcg {
     /// # Panics
     /// This method will panic if the current clock mode cannot be
     /// represented as a value of [`Clock`]
-    pub fn clock(&mut self) -> Clock {
+    pub fn clock(&mut self) -> Clock<M> {
         let source: OscSource = self.regs.c1.read().get_bits(6..8).into();
         let fll_internal = self.regs.c1.read().get_bit(2);
         let pll_enabled = self.regs.c6.read().get_bit(6);
@@ -126,7 +128,7 @@ impl Mcg {
     }
 }
 
-impl Drop for Mcg {
+impl<M> Drop for Mcg<M> {
     fn drop(&mut self) {
         LOCK.store(false, Ordering::Release);
     }
@@ -184,7 +186,7 @@ impl Into<u8> for OscRange {
     }
 }
 
-impl<'a> Fei<'a> {
+impl<'a, M> Fei<'a, M> {
     /// Bypass the FLL and use the external reference.
     ///
     /// If `token` is [`Some`], the external reference will be
@@ -195,7 +197,7 @@ impl<'a> Fei<'a> {
         divide: u32,
         range: OscRange,
         token: Option<OscToken>,
-    ) -> Result<Fbe<'a>, Error> {
+    ) -> Result<Fbe<'a, M>, Error> {
         self.0.regs.c2.update(|c2| {
             c2.set_bits(4..6, range.into());
             c2.set_bit(2, token.is_some());
@@ -249,13 +251,13 @@ impl<'a> Fei<'a> {
     }
 }
 
-impl<'a> Fbe<'a> {
+impl<'a, M> Fbe<'a, M> {
     /// Enable the PLL and switch to PBE mode
     ///
     /// This method does not protect you from selecting clock
     /// frequencies which are outside of the acceptable range for the
     /// MCU. Be careful!
-    pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a>, Error> {
+    pub fn enable_pll(self, numerator: u8, denominator: u8) -> Result<Pbe<'a, M>, Error> {
         if numerator < 24 || numerator > 55 {
             return Err(Error::InvalidDivider);
         }
@@ -282,9 +284,9 @@ impl<'a> Fbe<'a> {
     }
 }
 
-impl<'a> Pbe<'a> {
+impl<'a, M> Pbe<'a, M> {
     /// Switch the clock to the PLL
-    pub fn use_pll(self) -> Pee<'a> {
+    pub fn use_pll(self) -> Pee<'a, M> {
         self.0.regs.c1.update(|c1| {
             c1.set_bits(6..8, OscSource::LockedLoop.into());
         });
@@ -304,7 +306,7 @@ impl<'a> Pbe<'a> {
     ///
     /// Disabling the PLL is required before its dividers can be
     /// modified.
-    pub fn disable_pll(self) -> Fbe<'a> {
+    pub fn disable_pll(self) -> Fbe<'a, M> {
         self.0.regs.c6.update(|c6| {
             c6.set_bit(6, false);
         });
@@ -315,12 +317,12 @@ impl<'a> Pbe<'a> {
     }
 }
 
-impl<'a> Pee<'a> {
+impl<'a, M> Pee<'a, M> {
     /// Bypass the PLL
     ///
     /// Bypassing and disabling the PLL is required before its
     /// dividers can be modified.
-    pub fn bypass_pll(self) -> Pbe<'a> {
+    pub fn bypass_pll(self) -> Pbe<'a, M> {
         self.0.regs.c1.update(|c1| {
             c1.set_bits(6..8, OscSource::External.into());
         });
