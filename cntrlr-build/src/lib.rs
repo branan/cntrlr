@@ -82,6 +82,7 @@ impl FromStr for Board {
                 name: "teensy_35",
                 mcu: "mk64fx512",
                 targets: vec![
+                    "thumbv7em-none-eabihf",
                     "thumbv7em-none-eabi",
                     "thumbv7m-none-eabi",
                     "thumbv6m-none-eabi",
