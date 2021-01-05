@@ -59,7 +59,7 @@ pub mod macros {
 /// Common functions and traits for using Cntrlr
 pub mod prelude {
     pub use crate::digital::{PinMode, Pull};
-    pub use crate::io::{Read, ReadExt, Serial, Write, WriteExt};
+    pub use crate::io::{Read, ReadExt, Serial, SerialOption, Write, WriteExt};
     use cntrlr_macros::prelude_fn;
 
     #[prelude_fn(red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]

@@ -8,3 +8,11 @@ pub mod plic;
 pub mod prci;
 pub mod spi;
 pub mod uart;
+
+/// A Sifive peripheral
+pub trait Peripheral: Sized {
+    /// Get the instance of this perihperal
+    ///
+    /// Returns `None` if the peripheral is already in use.
+    fn get() -> Option<Self>;
+}

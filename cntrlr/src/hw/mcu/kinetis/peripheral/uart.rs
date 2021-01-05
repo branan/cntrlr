@@ -72,6 +72,20 @@ impl<M, const N: usize> Uart<M, (), (), N> {
     }
 }
 
+impl<M, T, R, const N: usize> Uart<M, T, R, N> {
+    /// Reverse the polarity of this UART
+    pub fn invert(&mut self, invert: bool) {
+        self.regs.c3.update(|c3| {
+            // TXINV
+            c3.set_bit(4, invert);
+        });
+        self.regs.s2.update(|s2| {
+            // RXINV
+            s2.set_bit(4, invert);
+        });
+    }
+}
+
 impl<M, R, const N: usize> Uart<M, (), R, N> {
     /// Enable this UART for transmitting.
     ///

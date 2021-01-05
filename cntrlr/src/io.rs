@@ -17,6 +17,13 @@ pub enum LineError<E> {
     Utf8(core::str::Utf8Error),
 }
 
+/// Serial configuration options
+#[non_exhaustive]
+pub enum SerialOption {
+    /// Invert the serial polarity
+    Invert(bool),
+}
+
 /// Allows reading bytes from a source
 pub trait Read {
     /// The error type
@@ -162,7 +169,16 @@ pub trait Serial: Read + Write {
     type Error: Debug;
 
     /// Enable the serial port at the specified baud rate
-    fn enable(&mut self, baud: usize) -> Result<(), <Self as Serial>::Error>;
+    fn enable(&mut self, baud: usize) -> Result<(), <Self as Serial>::Error> {
+        self.enable_with_options(baud, &[])
+    }
+
+    /// Enable the serial port at the specified baud rate, with the selected options
+    fn enable_with_options(
+        &mut self,
+        baud: usize,
+        options: &[SerialOption],
+    ) -> Result<(), <Self as Serial>::Error>;
 
     /// Disable the serial port.
     fn disable(&mut self) -> Result<(), <Self as Serial>::Error>;

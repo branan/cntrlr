@@ -4,8 +4,11 @@
 //! IO functionality shared between the various Teensy 3.x boards
 
 use crate::{
-    hw::mcu::kinetis::peripheral::uart::{Uart, UartRx, UartTx},
-    io,
+    hw::mcu::kinetis::peripheral::{
+        sim::{Peripheral, Sim},
+        uart::{Uart, UartRx, UartTx},
+    },
+    io::{self, SerialOption},
     task::WakerSet,
 };
 use core::{
@@ -31,6 +34,9 @@ pub enum SerialError {
 
     /// The serial port cannot be enabled because the SIM is in use
     SimInUse,
+
+    /// The serial port cannot be enabled because the selected baud rate is invalid
+    InvalidBaud,
 }
 
 /// A serial instance
@@ -40,6 +46,43 @@ pub struct Serial<M, T, R, const N: usize>(
     pub(crate) Option<Uart<M, T, R, N>>,
     pub(crate) Option<&'static WakerSet>,
 );
+
+impl<M, T, R, const N: usize> Serial<M, T, R, N>
+where
+    T: UartTx<M, N>,
+    R: UartRx<M, N>,
+    Uart<M, (), (), N>: Peripheral<M>,
+{
+    pub(crate) fn do_enable(
+        &mut self,
+        baud: usize,
+        options: &[SerialOption],
+        tx: T,
+        rx: R,
+        source_clock: usize,
+        wakers: &'static WakerSet,
+    ) -> Result<(), SerialError> {
+        let divisor = (source_clock * 32) / (baud * 16);
+        if divisor < 32 {
+            return Err(SerialError::InvalidBaud);
+        }
+        let mut uart = Sim::<M>::get()
+            .ok_or(SerialError::SimInUse)?
+            .enable_peripheral::<Uart<M, (), (), N>>()
+            .ok_or(SerialError::UartInUse)?;
+        uart.set_divisor(divisor);
+
+        for option in options {
+            match option {
+                SerialOption::Invert(invert) => uart.invert(*invert),
+            }
+        }
+
+        self.0 = Some(uart.enable_tx(tx).enable_rx(rx));
+        self.1 = Some(wakers);
+        Ok(())
+    }
+}
 
 impl<M, T, R, const N: usize> io::Read for Serial<M, T, R, N>
 where

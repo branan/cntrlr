@@ -7,7 +7,7 @@ use crate::{
     hw::{
         board::teensy_common::io::{Serial, SerialError},
         mcu::kinetis::{
-            mk20dx256::{Pin, Sim, Uart, UartRx, UartTx},
+            mk20dx256::{Pin, UartRx, UartTx},
             Mk20Dx256,
         },
     },
@@ -38,16 +38,11 @@ pub type Serial3Tx = UartTx<Pin<'static, 3, 3>>;
 impl io::Serial for Serial<Mk20Dx256, Serial1Tx, Serial1Rx, 0> {
     type Error = SerialError;
 
-    fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
-        let divisor = (super::CPU_FREQ.load(Ordering::Relaxed) as usize * 32) / (baud * 16);
-        let mut uart = Sim::get()
-            .ok_or(SerialError::SimInUse)?
-            .enable_peripheral::<Uart<(), (), 0>>()
-            .ok_or(SerialError::UartInUse)?;
-        uart.set_divisor(divisor);
-        uart.enable_tx_fifo(8, 7);
-        uart.enable_rx_fifo(8, 1);
-
+    fn enable_with_options(
+        &mut self,
+        baud: usize,
+        options: &[io::SerialOption],
+    ) -> Result<(), <Self as io::Serial>::Error> {
         let tx = super::digital::port_b()
             .ok_or(SerialError::PortInUse)?
             .pin::<17>()
@@ -58,9 +53,20 @@ impl io::Serial for Serial<Mk20Dx256, Serial1Tx, Serial1Rx, 0> {
             .pin::<16>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
-        let uart = uart.enable_tx(tx).enable_rx(rx);
-        self.0 = Some(uart);
-        self.1 = Some(&SERIAL_1_WAKERS);
+
+        self.do_enable(
+            baud,
+            options,
+            tx,
+            rx,
+            super::CPU_FREQ.load(Ordering::Relaxed),
+            &SERIAL_1_WAKERS,
+        )?;
+
+        if let Some(uart) = self.0.as_mut() {
+            uart.enable_tx_fifo(8, 7);
+            uart.enable_rx_fifo(8, 1);
+        }
         Ok(())
     }
 
@@ -74,16 +80,11 @@ impl io::Serial for Serial<Mk20Dx256, Serial1Tx, Serial1Rx, 0> {
 impl io::Serial for Serial<Mk20Dx256, Serial2Tx, Serial2Rx, 1> {
     type Error = SerialError;
 
-    fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
-        let divisor = (super::CPU_FREQ.load(Ordering::Relaxed) as usize * 32) / (baud * 16);
-        let mut uart = Sim::get()
-            .ok_or(SerialError::SimInUse)?
-            .enable_peripheral::<Uart<(), (), 1>>()
-            .ok_or(SerialError::UartInUse)?;
-        uart.set_divisor(divisor);
-        uart.enable_tx_fifo(8, 7);
-        uart.enable_rx_fifo(8, 1);
-
+    fn enable_with_options(
+        &mut self,
+        baud: usize,
+        options: &[io::SerialOption],
+    ) -> Result<(), <Self as io::Serial>::Error> {
         let tx = super::digital::port_c()
             .ok_or(SerialError::PortInUse)?
             .pin::<4>()
@@ -94,9 +95,20 @@ impl io::Serial for Serial<Mk20Dx256, Serial2Tx, Serial2Rx, 1> {
             .pin::<3>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
-        let uart = uart.enable_tx(tx).enable_rx(rx);
-        self.0 = Some(uart);
-        self.1 = Some(&SERIAL_2_WAKERS);
+
+        self.do_enable(
+            baud,
+            options,
+            tx,
+            rx,
+            super::CPU_FREQ.load(Ordering::Relaxed),
+            &SERIAL_2_WAKERS,
+        )?;
+
+        if let Some(uart) = self.0.as_mut() {
+            uart.enable_tx_fifo(8, 7);
+            uart.enable_rx_fifo(8, 1);
+        }
         Ok(())
     }
 
@@ -110,16 +122,11 @@ impl io::Serial for Serial<Mk20Dx256, Serial2Tx, Serial2Rx, 1> {
 impl io::Serial for Serial<Mk20Dx256, Serial3Tx, Serial3Rx, 2> {
     type Error = SerialError;
 
-    fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
-        let divisor = (super::BUS_FREQ.load(Ordering::Relaxed) as usize * 32) / (baud * 16);
-        let mut uart = Sim::get()
-            .ok_or(SerialError::SimInUse)?
-            .enable_peripheral::<Uart<(), (), 2>>()
-            .ok_or(SerialError::UartInUse)?;
-        uart.set_divisor(divisor);
-        uart.enable_tx_fifo(1, 0);
-        uart.enable_rx_fifo(1, 1);
-
+    fn enable_with_options(
+        &mut self,
+        baud: usize,
+        options: &[io::SerialOption],
+    ) -> Result<(), <Self as io::Serial>::Error> {
         let tx = super::digital::port_d()
             .ok_or(SerialError::PortInUse)?
             .pin::<3>()
@@ -130,9 +137,20 @@ impl io::Serial for Serial<Mk20Dx256, Serial3Tx, Serial3Rx, 2> {
             .pin::<2>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
-        let uart = uart.enable_tx(tx).enable_rx(rx);
-        self.0 = Some(uart);
-        self.1 = Some(&SERIAL_3_WAKERS);
+
+        self.do_enable(
+            baud,
+            options,
+            tx,
+            rx,
+            super::BUS_FREQ.load(Ordering::Relaxed),
+            &SERIAL_3_WAKERS,
+        )?;
+
+        if let Some(uart) = self.0.as_mut() {
+            uart.enable_tx_fifo(1, 0);
+            uart.enable_rx_fifo(1, 1);
+        }
         Ok(())
     }
 

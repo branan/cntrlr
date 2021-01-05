@@ -6,7 +6,7 @@
 use crate::{
     hw::mcu::sifive::{
         fe310g002::{Pin, Uart, UartRx, UartTx},
-        peripheral::uart,
+        peripheral::{uart, Peripheral},
         Fe310G002,
     },
     io::{self, Read, Write},
@@ -37,6 +37,9 @@ pub enum SerialError {
 
     /// The serial port cannot be enabled because the selected baud rate is invalid
     InvalidBaud,
+
+    /// The serial port cannot be enabled because a requested option is invalid
+    InvalidOption,
 }
 
 /// A serial interface
@@ -137,18 +140,43 @@ pub type Serial2Rx = UartRx<Pin<'static, 0, 23>>;
 /// The pin used to transmit for serial 2
 pub type Serial2Tx = UartTx<Pin<'static, 0, 18>>;
 
-impl io::Serial for Serial<Serial1Tx, Serial1Rx, 0> {
-    type Error = SerialError;
-    fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
+impl<T, R, const N: usize> Serial<T, R, N>
+where
+    T: uart::UartTx<Fe310G002, N>,
+    R: uart::UartRx<Fe310G002, N>,
+    Uart<(), (), N>: Peripheral,
+{
+    fn do_enable(
+        &mut self,
+        baud: usize,
+        options: &[io::SerialOption],
+        tx: T,
+        rx: R,
+        wakers: &'static WakerSet,
+    ) -> Result<(), SerialError> {
         let divisor = super::CPU_FREQ.load(Ordering::Relaxed) as usize / baud;
-        if baud < 16 {
+        if divisor < 16 {
             return Err(SerialError::InvalidBaud);
         }
-
-        let mut uart = Uart::<(), (), 0>::get().ok_or(SerialError::UartInUse)?;
+        if !options.is_empty() {
+            return Err(SerialError::InvalidOption);
+        }
+        let mut uart = Uart::<(), (), N>::get().ok_or(SerialError::UartInUse)?;
         uart.set_divisor(divisor);
         uart.set_watermarks(7, 0);
+        self.0 = Some(uart.enable_tx(tx).enable_rx(rx));
+        self.1 = Some(wakers);
+        Ok(())
+    }
+}
 
+impl io::Serial for Serial<Serial1Tx, Serial1Rx, 0> {
+    type Error = SerialError;
+    fn enable_with_options(
+        &mut self,
+        baud: usize,
+        options: &[io::SerialOption],
+    ) -> Result<(), <Self as io::Serial>::Error> {
         let tx = super::digital::gpio()
             .ok_or(SerialError::GpioInUse)?
             .pin::<17>()
@@ -159,9 +187,7 @@ impl io::Serial for Serial<Serial1Tx, Serial1Rx, 0> {
             .pin::<16>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
-        self.0 = Some(uart.enable_tx(tx).enable_rx(rx));
-        self.1 = Some(&SERIAL_1_WAKERS);
-        Ok(())
+        self.do_enable(baud, options, tx, rx, &SERIAL_1_WAKERS)
     }
 
     fn disable(&mut self) -> Result<(), <Self as io::Serial>::Error> {
@@ -173,16 +199,11 @@ impl io::Serial for Serial<Serial1Tx, Serial1Rx, 0> {
 
 impl io::Serial for Serial<Serial2Tx, Serial2Rx, 1> {
     type Error = SerialError;
-    fn enable(&mut self, baud: usize) -> Result<(), <Self as io::Serial>::Error> {
-        let divisor = super::CPU_FREQ.load(Ordering::Relaxed) as usize / baud;
-        if baud < 16 {
-            return Err(SerialError::InvalidBaud);
-        }
-
-        let mut uart = Uart::<(), (), 1>::get().ok_or(SerialError::UartInUse)?;
-        uart.set_divisor(divisor);
-        uart.set_watermarks(7, 0);
-
+    fn enable_with_options(
+        &mut self,
+        baud: usize,
+        options: &[io::SerialOption],
+    ) -> Result<(), <Self as io::Serial>::Error> {
         let tx = super::digital::gpio()
             .ok_or(SerialError::GpioInUse)?
             .pin::<18>()
@@ -193,9 +214,7 @@ impl io::Serial for Serial<Serial2Tx, Serial2Rx, 1> {
             .pin::<23>()
             .ok_or(SerialError::PinInUse)?
             .into_uart_rx();
-        self.0 = Some(uart.enable_tx(tx).enable_rx(rx));
-        self.1 = Some(&SERIAL_2_WAKERS);
-        Ok(())
+        self.do_enable(baud, options, tx, rx, &SERIAL_2_WAKERS)
     }
 
     fn disable(&mut self) -> Result<(), <Self as io::Serial>::Error> {

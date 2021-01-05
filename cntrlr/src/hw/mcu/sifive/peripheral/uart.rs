@@ -3,7 +3,7 @@
 
 //! The UART
 
-use super::super::Fe310G002;
+use super::{super::Fe310G002, Peripheral};
 use crate::{register::Register, sync::Flag};
 use bit_field::BitField;
 use core::{marker::PhantomData, sync::atomic::Ordering};
@@ -35,16 +35,16 @@ pub trait UartRx<M, const N: usize>: Unpin {}
 
 static LOCKS: [Flag; 2] = [Flag::new(false), Flag::new(false)];
 
-impl Uart<Fe310G002, (), (), 0> {
+impl Peripheral for Uart<Fe310G002, (), (), 0> {
     /// Get UART instance 0
-    pub fn get() -> Option<Self> {
+    fn get() -> Option<Self> {
         unsafe { Self::do_get(0x1001_3000) }
     }
 }
 
-impl Uart<Fe310G002, (), (), 1> {
+impl Peripheral for Uart<Fe310G002, (), (), 1> {
     /// Get UARt instance 1
-    pub fn get() -> Option<Self> {
+    fn get() -> Option<Self> {
         unsafe { Self::do_get(0x1002_3000) }
     }
 }
