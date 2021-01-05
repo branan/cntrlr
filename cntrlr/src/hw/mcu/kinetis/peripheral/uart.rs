@@ -5,7 +5,7 @@
 
 use super::{
     super::{Mk20Dx128, Mk20Dx256, Mk64Fx512, Mk66Fx1M0, Mkl26Z64},
-    sim::{Gate, Peripheral},
+    sim::{Gate, GatedPeripheral},
 };
 use crate::register::{Register, Reserved};
 use bit_field::BitField;
@@ -273,7 +273,7 @@ where
     }
 }
 
-unsafe impl Peripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 0> {
+unsafe impl GatedPeripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 0> {
     const GATE: (usize, usize) = (4, 10);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -287,7 +287,7 @@ unsafe impl Peripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 0> {
     }
 }
 
-unsafe impl Peripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 1> {
+unsafe impl GatedPeripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 1> {
     const GATE: (usize, usize) = (4, 11);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -301,7 +301,7 @@ unsafe impl Peripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 1> {
     }
 }
 
-unsafe impl Peripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 2> {
+unsafe impl GatedPeripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 2> {
     const GATE: (usize, usize) = (4, 12);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -315,7 +315,7 @@ unsafe impl Peripheral<Mk20Dx128> for Uart<Mk20Dx128, (), (), 2> {
     }
 }
 
-unsafe impl Peripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 0> {
+unsafe impl GatedPeripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 0> {
     const GATE: (usize, usize) = (4, 10);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -329,7 +329,7 @@ unsafe impl Peripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 0> {
     }
 }
 
-unsafe impl Peripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 1> {
+unsafe impl GatedPeripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 1> {
     const GATE: (usize, usize) = (4, 11);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -343,7 +343,7 @@ unsafe impl Peripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 1> {
     }
 }
 
-unsafe impl Peripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 2> {
+unsafe impl GatedPeripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 2> {
     const GATE: (usize, usize) = (4, 12);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -357,7 +357,7 @@ unsafe impl Peripheral<Mk20Dx256> for Uart<Mk20Dx256, (), (), 2> {
     }
 }
 
-unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 0> {
+unsafe impl GatedPeripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 0> {
     const GATE: (usize, usize) = (4, 10);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -371,7 +371,7 @@ unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 0> {
     }
 }
 
-unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 1> {
+unsafe impl GatedPeripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 1> {
     const GATE: (usize, usize) = (4, 11);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -385,7 +385,7 @@ unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 1> {
     }
 }
 
-unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 2> {
+unsafe impl GatedPeripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 2> {
     const GATE: (usize, usize) = (4, 12);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -399,7 +399,7 @@ unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 2> {
     }
 }
 
-unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 3> {
+unsafe impl GatedPeripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 3> {
     const GATE: (usize, usize) = (4, 13);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -413,7 +413,7 @@ unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 3> {
     }
 }
 
-unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 4> {
+unsafe impl GatedPeripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 4> {
     const GATE: (usize, usize) = (1, 10);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -427,7 +427,7 @@ unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 4> {
     }
 }
 
-unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 5> {
+unsafe impl GatedPeripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 5> {
     const GATE: (usize, usize) = (1, 11);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -441,7 +441,7 @@ unsafe impl Peripheral<Mk64Fx512> for Uart<Mk64Fx512, (), (), 5> {
     }
 }
 
-unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 0> {
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 0> {
     const GATE: (usize, usize) = (4, 10);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -455,7 +455,7 @@ unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 0> {
     }
 }
 
-unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 1> {
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 1> {
     const GATE: (usize, usize) = (4, 11);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -469,7 +469,7 @@ unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 1> {
     }
 }
 
-unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 2> {
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 2> {
     const GATE: (usize, usize) = (4, 12);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -483,7 +483,7 @@ unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 2> {
     }
 }
 
-unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 3> {
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 3> {
     const GATE: (usize, usize) = (4, 13);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -497,7 +497,7 @@ unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 3> {
     }
 }
 
-unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 4> {
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 4> {
     const GATE: (usize, usize) = (1, 10);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -511,7 +511,7 @@ unsafe impl Peripheral<Mk66Fx1M0> for Uart<Mk66Fx1M0, (), (), 4> {
     }
 }
 
-unsafe impl Peripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 0> {
+unsafe impl GatedPeripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 0> {
     const GATE: (usize, usize) = (4, 10);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -525,7 +525,7 @@ unsafe impl Peripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 0> {
     }
 }
 
-unsafe impl Peripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 1> {
+unsafe impl GatedPeripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 1> {
     const GATE: (usize, usize) = (4, 11);
 
     unsafe fn new(gate: Gate) -> Self {
@@ -539,7 +539,7 @@ unsafe impl Peripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 1> {
     }
 }
 
-unsafe impl Peripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 2> {
+unsafe impl GatedPeripheral<Mkl26Z64> for Uart<Mkl26Z64, (), (), 2> {
     const GATE: (usize, usize) = (4, 12);
 
     unsafe fn new(gate: Gate) -> Self {

@@ -3,10 +3,9 @@
 
 //! The UART
 
-use super::{super::Fe310G002, Peripheral};
 use crate::{register::Register, sync::Flag};
 use bit_field::BitField;
-use core::{marker::PhantomData, sync::atomic::Ordering};
+use core::{marker::PhantomData, mem::ManuallyDrop, sync::atomic::Ordering};
 
 #[repr(C)]
 struct UartRegs {
@@ -21,9 +20,9 @@ struct UartRegs {
 
 /// A UART
 pub struct Uart<M, T, R, const N: usize> {
-    regs: &'static mut UartRegs,
-    tx: T,
-    rx: R,
+    regs: ManuallyDrop<&'static mut UartRegs>,
+    tx: ManuallyDrop<T>,
+    rx: ManuallyDrop<R>,
     mcu: PhantomData<M>,
 }
 
@@ -35,34 +34,45 @@ pub trait UartRx<M, const N: usize>: Unpin {}
 
 static LOCKS: [Flag; 2] = [Flag::new(false), Flag::new(false)];
 
-impl Peripheral for Uart<Fe310G002, (), (), 0> {
-    /// Get UART instance 0
-    fn get() -> Option<Self> {
-        unsafe { Self::do_get(0x1001_3000) }
-    }
+macro_rules! get {
+    ($i:literal, $a:literal) => {
+        #[cfg(any(doc, mcu = "fe310g002"))]
+        #[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = "fe310g002")))]
+        impl super::Peripheral for Uart<super::super::Fe310G002, (), (), $i> {
+            fn get() -> Option<Self> {
+                unsafe {
+                    if LOCKS[$i].swap(true, Ordering::Acquire) {
+                        None
+                    } else {
+                        Some(Self {
+                            regs: ManuallyDrop::new(&mut *($a as *mut _)),
+                            tx: ManuallyDrop::new(()),
+                            rx: ManuallyDrop::new(()),
+                            mcu: PhantomData,
+                        })
+                    }
+                }
+            }
+        }
+    };
 }
 
-impl Peripheral for Uart<Fe310G002, (), (), 1> {
-    /// Get UARt instance 1
-    fn get() -> Option<Self> {
-        unsafe { Self::do_get(0x1002_3000) }
+get!(0, 0x1001_3000);
+get!(1, 0x1002_3000);
+
+impl<M, const N: usize> Uart<M, (), (), N>
+where
+    Uart<M, (), (), N>: super::Peripheral,
+{
+    /// Get the handle to a UART
+    ///
+    /// Returns 'None' if the UART is already in use.
+    pub fn get() -> Option<Self> {
+        super::Peripheral::get()
     }
 }
 
 impl<M, const N: usize> Uart<M, (), (), N> {
-    unsafe fn do_get(addr: usize) -> Option<Self> {
-        if LOCKS[N].swap(true, Ordering::Acquire) {
-            None
-        } else {
-            Some(Self {
-                regs: &mut *(addr as *mut _),
-                tx: (),
-                rx: (),
-                mcu: PhantomData,
-            })
-        }
-    }
-
     /// Set the UART divisor
     ///
     /// The Uart is clocked at CPU_FREQ/div. If the UART is used as a
@@ -75,30 +85,36 @@ impl<M, const N: usize> Uart<M, (), (), N> {
 
 impl<M, T, const N: usize> Uart<M, T, (), N> {
     /// Enable this UART as a reciever
-    pub fn enable_rx<R: UartRx<M, N>>(self, rx: R) -> Uart<M, T, R, N> {
+    pub fn enable_rx<R: UartRx<M, N>>(mut self, rx: R) -> Uart<M, T, R, N> {
         self.regs.txctrl.update(|rxctrl| {
             rxctrl.set_bit(0, true);
         });
-        Uart {
-            regs: self.regs,
-            tx: self.tx,
-            rx,
-            mcu: self.mcu,
+        unsafe {
+            let regs = ManuallyDrop::new(ManuallyDrop::take(&mut self.regs));
+            let tx = ManuallyDrop::new(ManuallyDrop::take(&mut self.tx));
+            let rx = ManuallyDrop::new(rx);
+            let mcu = self.mcu;
+            ManuallyDrop::drop(&mut self.rx);
+            core::mem::forget(self);
+            Uart { regs, tx, rx, mcu }
         }
     }
 }
 
 impl<M, R, const N: usize> Uart<M, (), R, N> {
     /// Enable this UART as a transmitter
-    pub fn enable_tx<T: UartTx<M, N>>(self, tx: T) -> Uart<M, T, R, N> {
+    pub fn enable_tx<T: UartTx<M, N>>(mut self, tx: T) -> Uart<M, T, R, N> {
         self.regs.txctrl.update(|txctrl| {
             txctrl.set_bit(0, true);
         });
-        Uart {
-            regs: self.regs,
-            tx,
-            rx: self.rx,
-            mcu: self.mcu,
+        unsafe {
+            let regs = ManuallyDrop::new(ManuallyDrop::take(&mut self.regs));
+            let tx = ManuallyDrop::new(tx);
+            let rx = ManuallyDrop::new(ManuallyDrop::take(&mut self.rx));
+            let mcu = self.mcu;
+            ManuallyDrop::drop(&mut self.tx);
+            core::mem::forget(self);
+            Uart { regs, tx, rx, mcu }
         }
     }
 }
@@ -160,5 +176,15 @@ impl<M, T, R, const N: usize> Uart<M, T, R, N> {
         self.regs.rxctrl.update(|rxctrl| {
             rxctrl.set_bits(16..19, rx);
         });
+    }
+}
+
+impl<M, T, R, const N: usize> Drop for Uart<M, T, R, N> {
+    fn drop(&mut self) {
+        unsafe {
+            ManuallyDrop::drop(&mut self.tx);
+            ManuallyDrop::drop(&mut self.rx);
+            LOCKS[N].store(false, Ordering::Release);
+        }
     }
 }

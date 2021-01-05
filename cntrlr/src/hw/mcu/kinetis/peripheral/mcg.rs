@@ -92,23 +92,46 @@ pub enum Error {
 
 static LOCK: Flag = Flag::new(false);
 
-impl<M> Mcg<M> {
+macro_rules! get {
+    ($m:ident, $s:literal) => {
+        #[cfg(any(doc, mcu = $s))]
+        #[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = $s)))]
+        impl super::Peripheral for Mcg<$m> {
+            fn get() -> Option<Self> {
+                unsafe {
+                    if LOCK.swap(true, Ordering::Acquire) {
+                        None
+                    } else {
+                        Some(Self {
+                            regs: &mut *(0x4006_4000 as *mut _),
+                            _mcu: PhantomData,
+                        })
+                    }
+                }
+            }
+        }
+    };
+}
+
+get!(Mk20Dx128, "mk20dx128");
+get!(Mk20Dx256, "mk20dx256");
+get!(Mk64Fx512, "mk64fx512");
+get!(Mk66Fx1M0, "mk66fx1m0");
+get!(Mkl26Z64, "mkl26z64");
+
+impl<M> Mcg<M>
+where
+    Mcg<M>: super::Peripheral,
+{
     /// Get the handdle to the MCG
     ///
     /// Returns `None` if the MCG is already in use.
     pub fn get() -> Option<Self> {
-        unsafe {
-            if LOCK.swap(true, Ordering::Acquire) {
-                None
-            } else {
-                Some(Self {
-                    regs: &mut *(0x4006_4000 as *mut _),
-                    _mcu: PhantomData,
-                })
-            }
-        }
+        super::Peripheral::get()
     }
+}
 
+impl<M> Mcg<M> {
     /// Get the current clock mode
     ///
     /// # Panics

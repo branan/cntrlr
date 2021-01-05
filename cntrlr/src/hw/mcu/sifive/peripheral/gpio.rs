@@ -65,9 +65,10 @@ pub struct Pin<'a, M, const N: usize, const P: usize> {
 
 static LOCK: Flag = Flag::new(false);
 
-impl Gpio<Fe310G002, 0> {
-    /// Get GPIO instance 0
-    pub fn get() -> Option<Self> {
+#[cfg(any(doc, mcu = "fe310g002"))]
+#[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = "fe310g002")))]
+impl super::Peripheral for Gpio<Fe310G002, 0> {
+    fn get() -> Option<Self> {
         unsafe {
             if LOCK.swap(true, Ordering::Acquire) {
                 None
@@ -82,6 +83,18 @@ impl Gpio<Fe310G002, 0> {
     }
 }
 
+impl<M, const N: usize> Gpio<M, N>
+where
+    Gpio<M, N>: super::Peripheral,
+{
+    /// Get the handle to the GPIO
+    ///
+    /// Returns 'None' if the GPIO is already in use.
+    pub fn get() -> Option<Self> {
+        super::Peripheral::get()
+    }
+}
+
 impl<M, const N: usize> Gpio<M, N> {
     /// Get a pin from this GPIO
     pub fn pin<const P: usize>(&self) -> Option<Pin<M, N, P>> {
@@ -90,6 +103,12 @@ impl<M, const N: usize> Gpio<M, N> {
         } else {
             Some(Pin { port: self })
         }
+    }
+}
+
+impl<M, const N: usize> Drop for Gpio<M, N> {
+    fn drop(&mut self) {
+        LOCK.store(false, Ordering::Release);
     }
 }
 

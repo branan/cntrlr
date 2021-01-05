@@ -5,8 +5,9 @@
 
 use crate::{
     hw::mcu::kinetis::peripheral::{
-        sim::{Peripheral, Sim},
+        sim::{GatedPeripheral, Sim},
         uart::{Uart, UartRx, UartTx},
+        Peripheral,
     },
     io::{self, SerialOption},
     task::WakerSet,
@@ -51,7 +52,8 @@ impl<M, T, R, const N: usize> Serial<M, T, R, N>
 where
     T: UartTx<M, N>,
     R: UartRx<M, N>,
-    Uart<M, (), (), N>: Peripheral<M>,
+    Uart<M, (), (), N>: GatedPeripheral<M>,
+    Sim<M>: Peripheral,
 {
     pub(crate) fn do_enable(
         &mut self,

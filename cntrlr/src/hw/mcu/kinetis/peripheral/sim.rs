@@ -11,11 +11,11 @@ use crate::{
 use bit_field::BitField;
 use core::{marker::PhantomData, sync::atomic::Ordering};
 
-/// A peripheral
+/// A clock-gated peripheral
 ///
 /// This trait indicates that the implementing peripheral handle is
 /// clock-gated in the SIM.
-pub unsafe trait Peripheral<T> {
+pub unsafe trait GatedPeripheral<T> {
     /// The clock gate that controls this peripheral
     const GATE: (usize, usize);
 
@@ -93,21 +93,46 @@ pub enum PeripheralClockSource {
 
 static LOCK: Flag = Flag::new(false);
 
-impl<M> Sim<M> {
-    /// Get the handle to the SIM
-    pub fn get() -> Option<Self> {
-        unsafe {
-            if LOCK.swap(true, Ordering::Acquire) {
-                None
-            } else {
-                Some(Self {
-                    regs: &mut *(0x4004_7000 as *mut _),
-                    _mcu: PhantomData,
-                })
+macro_rules! get {
+    ($m:ident, $s:literal) => {
+        #[cfg(any(doc, mcu = $s))]
+        #[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = $s)))]
+        impl super::Peripheral for Sim<$m> {
+            fn get() -> Option<Self> {
+                unsafe {
+                    if LOCK.swap(true, Ordering::Acquire) {
+                        None
+                    } else {
+                        Some(Self {
+                            regs: &mut *(0x4004_7000 as *mut _),
+                            _mcu: PhantomData,
+                        })
+                    }
+                }
             }
         }
-    }
+    };
+}
 
+get!(Mk20Dx128, "mk20dx128");
+get!(Mk20Dx256, "mk20dx256");
+get!(Mk64Fx512, "mk64fx512");
+get!(Mk66Fx1M0, "mk66fx1m0");
+get!(Mkl26Z64, "mkl26z64");
+
+impl<M> Sim<M>
+where
+    Sim<M>: super::Peripheral,
+{
+    /// Get the handle to the SIM
+    ///
+    /// Returns 'None' if the SIM is already in use.
+    pub fn get() -> Option<Self> {
+        super::Peripheral::get()
+    }
+}
+
+impl<M> Sim<M> {
     /// Set the USB clock source
     pub fn set_usb_source(&mut self, source: UsbClockSource) {
         self.regs.sopt2.update(|sopt2| {
@@ -131,7 +156,7 @@ impl<M> Sim<M> {
     ///
     /// Enable a clock-gated peripheral, returning its handle. Returns
     /// `None` if the peripheral is already active.
-    pub fn enable_peripheral<P: Peripheral<M>>(&mut self) -> Option<P> {
+    pub fn enable_peripheral<P: GatedPeripheral<M>>(&mut self) -> Option<P> {
         unsafe {
             let gate = bitband_address(self.regs.scgc.as_mut_ptr().add(P::GATE.0 - 1), P::GATE.1);
             if core::ptr::read_volatile(gate) != 0 {

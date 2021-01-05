@@ -5,7 +5,7 @@
 
 use crate::{register::Register, sync::Flag};
 use bit_field::BitField;
-use core::sync::atomic::Ordering;
+use core::{marker::PhantomData, sync::atomic::Ordering};
 
 /// Error for [`Osc::enable`]
 #[derive(Debug)]
@@ -24,8 +24,9 @@ struct OscRegs {
 }
 
 /// The handle to the OSC
-pub struct Osc {
+pub struct Osc<M> {
     regs: &'static mut OscRegs,
+    _mcu: PhantomData<M>,
 }
 
 /// An opaque token indicating that the Oscillator has been
@@ -36,22 +37,46 @@ pub struct OscToken {
 
 static LOCK: Flag = Flag::new(false);
 
-impl Osc {
-    /// Get the handle to the OSC
-    ///
-    /// Returns `None` if the Osc is already in use.
-    pub fn get() -> Option<Self> {
-        unsafe {
-            if LOCK.swap(true, Ordering::Acquire) {
-                None
-            } else {
-                Some(Self {
-                    regs: &mut *(0x4006_5000 as *mut _),
-                })
+macro_rules! get {
+    ($m:ident, $s:literal) => {
+        #[cfg(any(doc, mcu = $s))]
+        #[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = $s)))]
+        impl super::Peripheral for Osc<super::super::$m> {
+            fn get() -> Option<Self> {
+                unsafe {
+                    if LOCK.swap(true, Ordering::Acquire) {
+                        None
+                    } else {
+                        Some(Self {
+                            regs: &mut *(0x4006_5000 as *mut _),
+                            _mcu: PhantomData,
+                        })
+                    }
+                }
             }
         }
-    }
+    };
+}
 
+get!(Mk20Dx128, "mk20dx128");
+get!(Mk20Dx256, "mk20dx256");
+get!(Mk64Fx512, "mk64fx512");
+get!(Mk66Fx1M0, "mk66fx1m0");
+get!(Mkl26Z64, "mkl26z64");
+
+impl<M> Osc<M>
+where
+    Osc<M>: super::Peripheral,
+{
+    /// Get the handdle to the OSC
+    ///
+    /// Returns `None` if the OSC is already in use.
+    pub fn get() -> Option<Self> {
+        super::Peripheral::get()
+    }
+}
+
+impl<M> Osc<M> {
     /// Enable the internal oscillator with the specified capacitance
     pub fn enable(&mut self, capacitance: u8) -> Result<OscToken, Error> {
         if capacitance % 2 == 1 || capacitance > 30 {
@@ -75,7 +100,7 @@ impl Osc {
     }
 }
 
-impl Drop for Osc {
+impl<M> Drop for Osc<M> {
     fn drop(&mut self) {
         LOCK.store(false, Ordering::Release);
     }

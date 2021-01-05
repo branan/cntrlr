@@ -24,19 +24,40 @@ pub struct Smc<M> {
 
 static LOCK: Flag = Flag::new(false);
 
-impl<M> Smc<M> {
-    /// Get the handle to the SMC
-    pub fn get() -> Option<Self> {
-        unsafe {
-            if LOCK.swap(true, Ordering::Acquire) {
-                None
-            } else {
-                Some(Self {
-                    regs: &mut *(0x4007_E000 as *mut _),
-                    _mcu: PhantomData,
-                })
+macro_rules! get {
+    ($m:ident, $s:literal) => {
+        #[cfg(any(doc, mcu = $s))]
+        #[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = $s)))]
+        impl super::Peripheral for Smc<super::super::$m> {
+            fn get() -> Option<Self> {
+                unsafe {
+                    if LOCK.swap(true, Ordering::Acquire) {
+                        None
+                    } else {
+                        Some(Self {
+                            regs: &mut *(0x4004_7000 as *mut _),
+                            _mcu: PhantomData,
+                        })
+                    }
+                }
             }
         }
+    };
+}
+
+get!(Mk20Dx128, "mk20dx128");
+get!(Mk20Dx256, "mk20dx256");
+get!(Mk64Fx512, "mk64fx512");
+get!(Mk66Fx1M0, "mk66fx1m0");
+get!(Mkl26Z64, "mkl26z64");
+
+impl<M> Smc<M>
+where
+    Smc<M>: super::Peripheral,
+{
+    /// Get the handle to the SMC
+    pub fn get() -> Option<Self> {
+        super::Peripheral::get()
     }
 }
 

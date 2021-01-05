@@ -6,7 +6,6 @@
 //! On the FE310 series, the SPI communications and QSPI memory
 //! devices provide identical interfaces.
 
-use super::super::Fe310G002;
 use crate::{
     register::{Register, Reserved},
     sync::Flag,
@@ -49,29 +48,38 @@ pub struct Spi<M, T, R, const N: usize> {
 
 static LOCKS: [Flag; 3] = [Flag::new(false), Flag::new(false), Flag::new(false)];
 
-impl Spi<Fe310G002, (), (), 0> {
-    /// Get SPI instance 0
+#[cfg(any(doc, mcu = "fe310g002"))]
+#[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = "fe310g002")))]
+impl super::Peripheral for Spi<super::super::Fe310G002, (), (), 0> {
+    fn get() -> Option<Self> {
+        unsafe {
+            if LOCKS[0].swap(true, Ordering::Acquire) {
+                None
+            } else {
+                Some(Self {
+                    regs: &mut *(0x1001_4000 as *mut _),
+                    _tx: (),
+                    _rx: (),
+                    _mcu: PhantomData,
+                })
+            }
+        }
+    }
+}
+
+impl<M, const N: usize> Spi<M, (), (), N>
+where
+    Spi<M, (), (), N>: super::Peripheral,
+{
+    /// Get the handle to the SPI
     ///
-    /// Instance 0 is the QSPI flash controller.
+    /// Returns 'None' if the SPI is already in use.
     pub fn get() -> Option<Self> {
-        unsafe { Self::do_get(0x1001_4000) }
+        super::Peripheral::get()
     }
 }
 
 impl<M, const N: usize> Spi<M, (), (), N> {
-    unsafe fn do_get(addr: usize) -> Option<Self> {
-        if LOCKS[N].swap(true, Ordering::Acquire) {
-            None
-        } else {
-            Some(Self {
-                regs: &mut *(addr as *mut _),
-                _tx: (),
-                _rx: (),
-                _mcu: PhantomData,
-            })
-        }
-    }
-
     /// Set the SPI divisor
     ///
     /// The SPI is clocked at `CPU_FREQ / div`. The divisor must be an

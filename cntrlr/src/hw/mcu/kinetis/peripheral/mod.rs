@@ -11,3 +11,13 @@ pub mod smc;
 pub mod systick;
 pub mod uart;
 pub mod wdog;
+
+/// A Kinetis peripheral
+///
+/// Trait for peripherals which are always enabled.
+pub trait Peripheral: Sized {
+    /// Get the instance of this perihperal
+    ///
+    /// Returns `None` if the peripheral is already in use.
+    fn get() -> Option<Self>;
+}

@@ -8,7 +8,7 @@
 
 use crate::{register::Register, sync::Flag};
 use bit_field::BitField;
-use core::sync::atomic::Ordering;
+use core::{marker::PhantomData, sync::atomic::Ordering};
 
 #[repr(C)]
 struct SysTickRegs {
@@ -19,28 +19,53 @@ struct SysTickRegs {
 }
 
 /// The handle to the SYSTICK
-pub struct SysTick {
+pub struct SysTick<M> {
     regs: &'static mut SysTickRegs,
+    _mcu: PhantomData<M>,
 }
 
-static SYSTICK_LOCK: Flag = Flag::new(false);
+static LOCK: Flag = Flag::new(false);
 
-impl SysTick {
+macro_rules! get {
+    ($m:ident, $s:literal) => {
+        #[cfg(any(doc, mcu = $s))]
+        #[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = $s)))]
+        impl super::Peripheral for SysTick<super::super::$m> {
+            fn get() -> Option<Self> {
+                unsafe {
+                    if LOCK.swap(true, Ordering::Acquire) {
+                        None
+                    } else {
+                        Some(Self {
+                            regs: &mut *(0x4006_4000 as *mut _),
+                            _mcu: PhantomData,
+                        })
+                    }
+                }
+            }
+        }
+    };
+}
+
+get!(Mk20Dx128, "mk20dx128");
+get!(Mk20Dx256, "mk20dx256");
+get!(Mk64Fx512, "mk64fx512");
+get!(Mk66Fx1M0, "mk66fx1m0");
+get!(Mkl26Z64, "mkl26z64");
+
+impl<M> SysTick<M>
+where
+    SysTick<M>: super::Peripheral,
+{
     /// Get the handle to the SysTick
     ///
     /// Returns `None` if the SysTick is already in use.
     pub fn get() -> Option<Self> {
-        unsafe {
-            if SYSTICK_LOCK.swap(true, Ordering::AcqRel) {
-                None
-            } else {
-                Some(Self {
-                    regs: &mut *(0xE000E010 as *mut _),
-                })
-            }
-        }
+        super::Peripheral::get()
     }
+}
 
+impl<M> SysTick<M> {
     /// Set the value which is reloaded when the timer reaches zero
     pub fn set_reload_value(&mut self, value: u32) {
         self.regs.load.write(value);
@@ -74,8 +99,8 @@ impl SysTick {
     }
 }
 
-impl Drop for SysTick {
+impl<M> Drop for SysTick<M> {
     fn drop(&mut self) {
-        SYSTICK_LOCK.store(false, Ordering::Release);
+        LOCK.store(false, Ordering::Release);
     }
 }

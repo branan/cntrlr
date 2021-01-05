@@ -5,7 +5,6 @@
 //!
 ///! The PRCI is responsible for generating the clocks used on the
 ///! FE310 series.
-use super::super::Fe310G002;
 use crate::{register::Register, sync::Flag};
 use bit_field::BitField;
 use core::{marker::PhantomData, sync::atomic::Ordering};
@@ -34,9 +33,11 @@ pub enum Error {
 
 static LOCK: Flag = Flag::new(false);
 
-impl Prci<Fe310G002> {
+#[cfg(any(doc, mcu = "fe310g002"))]
+#[cfg_attr(feature = "doc-cfg", doc(cfg(mcu = "fe310g002")))]
+impl super::Peripheral for Prci<super::super::Fe310G002> {
     /// Get the PRCI instance
-    pub fn get() -> Option<Self> {
+    fn get() -> Option<Self> {
         unsafe {
             if LOCK.swap(true, Ordering::Acquire) {
                 None
@@ -47,6 +48,18 @@ impl Prci<Fe310G002> {
                 })
             }
         }
+    }
+}
+
+impl<M> Prci<M>
+where
+    Prci<M>: super::Peripheral,
+{
+    /// Return the handle to the PRCI
+    ///
+    /// Returns 'None' if the PRCI is already in use.
+    pub fn get() -> Option<Self> {
+        super::Peripheral::get()
     }
 }
 

@@ -10,7 +10,9 @@ pub use super::peripheral::mcg::OscRange;
 pub use super::peripheral::osc::Osc;
 pub use super::peripheral::port::{UartRx, UartTx};
 pub use super::peripheral::sim::{PeripheralClockSource, UartClockSource, UsbClockSource};
-pub use super::peripheral::systick::SysTick;
+
+/// The handle to the SysTick
+pub type SysTick = super::peripheral::systick::SysTick<super::Mkl26Z64>;
 
 /// The handle to the MCG
 pub type Mcg = super::peripheral::mcg::Mcg<super::Mkl26Z64>;
