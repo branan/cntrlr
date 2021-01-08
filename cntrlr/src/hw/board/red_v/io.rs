@@ -55,7 +55,10 @@ where
     type Error = SerialError;
     type Future<'a> = impl Future<Output = Result<usize, Self::Error>>;
 
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> <Self as Read>::Future<'a> {
+    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> <Self as Read>::Future<'a>
+    where
+        Self: 'a,
+    {
         poll_fn(move |ctx| {
             if buf.is_empty() {
                 return Poll::Ready(Ok(0));
@@ -92,7 +95,10 @@ where
     type Future<'a> = impl Future<Output = Result<usize, Self::Error>>;
     type FlushFuture<'a> = impl Future<Output = Result<(), Self::Error>>;
 
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> <Self as Write>::Future<'a> {
+    fn write<'a>(&'a mut self, buf: &'a [u8]) -> <Self as Write>::Future<'a>
+    where
+        Self: 'a,
+    {
         poll_fn(move |ctx| {
             if buf.is_empty() {
                 return Poll::Ready(Ok(0));
@@ -120,8 +126,10 @@ where
         })
     }
 
-    #[allow(clippy::needless_lifetimes)] // This lint is incorrect for GATs
-    fn flush<'a>(&'a mut self) -> <Self as Write>::FlushFuture<'a> {
+    fn flush<'a>(&'a mut self) -> <Self as Write>::FlushFuture<'a>
+    where
+        Self: 'a,
+    {
         // Not possible to flush on this hardware - just say we're
         // flushed.
         ready(Ok(()))

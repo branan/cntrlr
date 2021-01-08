@@ -24,19 +24,30 @@ pub enum SerialOption {
     Invert(bool),
 }
 
+/// SPI configuration options
+#[non_exhaustive]
+pub enum SpiOption {
+    /// Use a hardware chip select for the given pin
+    HardwareCs(usize),
+}
+
 /// Allows reading bytes from a source
 pub trait Read {
     /// The error type
     type Error: Debug;
 
     /// The future for [`Self::read()`]
-    type Future<'a>: Future<Output = Result<usize, Self::Error>> + 'a;
+    type Future<'a>: Future<Output = Result<usize, Self::Error>> + 'a
+    where
+        Self: 'a;
 
     /// Read bytes from the device
     ///
     /// This reads as many bytes as are currently available, up to
     /// `buf.len()`, and returns the number of bytes written.
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::Future<'a>;
+    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::Future<'a>
+    where
+        Self: 'a;
 }
 
 /// Allows writing bytes to  a sink
@@ -45,37 +56,50 @@ pub trait Write {
     type Error: Debug;
 
     /// The future for [`Self::write()`]
-    type Future<'a>: Future<Output = Result<usize, Self::Error>> + 'a;
+    type Future<'a>: Future<Output = Result<usize, Self::Error>> + 'a
+    where
+        Self: 'a;
 
     /// The future for [`Self::flush()`]
-    type FlushFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a;
+    type FlushFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a
+    where
+        Self: 'a;
 
     /// Write bytes to the device
     ///
     /// This writes as many bytes as possible, up to `buf.len()`, and
     /// returns the number of bytes written.
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::Future<'a>;
+    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::Future<'a>
+    where
+        Self: 'a;
 
     /// Ensure all written bytes have been transmitted
     ///
     /// On devices which do not support this operation, this function
     /// does nothing.
-    #[allow(clippy::needless_lifetimes)] // this lint is incorrect for GATs
-    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>;
+    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>
+    where
+        Self: 'a;
 }
 
 /// Extended functions for reading bytes
 pub trait ReadExt: Read {
     /// The future for [`Self::read_exact()`]
-    type ExactFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a;
+    type ExactFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a
+    where
+        Self: 'a;
 
     /// The future for [`Self::read_line()`]
-    type LineFuture<'a>: Future<Output = Result<(), LineError<Self::Error>>> + 'a;
+    type LineFuture<'a>: Future<Output = Result<(), LineError<Self::Error>>> + 'a
+    where
+        Self: 'a;
 
     /// Read bytes from the device
     ///
     /// This reads exactly `buf.len()` bytes from the device.
-    fn read_exact<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ExactFuture<'a>;
+    fn read_exact<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ExactFuture<'a>
+    where
+        Self: 'a;
 
     /// Read a line from the device
     ///
@@ -83,14 +107,21 @@ pub trait ReadExt: Read {
     /// [`String`] until it reaches a newline
     /// (0x0A). The newline will also be included in the output
     /// string.
-    fn read_line<'a>(&'a mut self, buf: &'a mut String) -> Self::LineFuture<'a>;
+    fn read_line<'a>(&'a mut self, buf: &'a mut String) -> Self::LineFuture<'a>
+    where
+        Self: 'a;
 }
 
-impl<T: Read + 'static> ReadExt for T {
-    type ExactFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a;
-    type LineFuture<'a> = impl Future<Output = Result<(), LineError<Self::Error>>> + 'a;
+impl<T: Read> ReadExt for T {
+    #[rustfmt::skip]
+    type ExactFuture<'a> where Self: 'a = impl Future<Output = Result<(), Self::Error>> + 'a;
+    #[rustfmt::skip]
+    type LineFuture<'a> where Self: 'a = impl Future<Output = Result<(), LineError<Self::Error>>> + 'a;
 
-    fn read_exact<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ExactFuture<'a> {
+    fn read_exact<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::ExactFuture<'a>
+    where
+        Self: 'a,
+    {
         async move {
             let mut buf = buf;
             while !buf.is_empty() {
@@ -101,7 +132,10 @@ impl<T: Read + 'static> ReadExt for T {
         }
     }
 
-    fn read_line<'a>(&'a mut self, buf: &'a mut String) -> Self::LineFuture<'a> {
+    fn read_line<'a>(&'a mut self, buf: &'a mut String) -> Self::LineFuture<'a>
+    where
+        Self: 'a,
+    {
         async move {
             let buf = unsafe { buf.as_mut_vec() };
             loop {
@@ -121,28 +155,42 @@ impl<T: Read + 'static> ReadExt for T {
 /// Extended functions for writing bytes
 pub trait WriteExt: Write {
     /// The future for [`Self::write_all()`]
-    type AllFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a;
+    type AllFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a
+    where
+        Self: 'a;
 
     /// The future for [`Self::write_fmt()`]
-    type FmtFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a;
+    type FmtFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a
+    where
+        Self: 'a;
 
     /// Write bytes to the device
     ///
     /// This writes exactly `buf.len()` bytes to the device.
-    fn write_all<'a>(&'a mut self, buf: &'a [u8]) -> Self::AllFuture<'a>;
+    fn write_all<'a>(&'a mut self, buf: &'a [u8]) -> Self::AllFuture<'a>
+    where
+        Self: 'a;
 
     /// Write a formatted message to the device
     ///
     /// Internally, this will allocate a [`String`] to hold the
     /// formatted output.
-    fn write_fmt<'a>(&'a mut self, fmt: core::fmt::Arguments<'a>) -> Self::FmtFuture<'a>;
+    fn write_fmt<'a>(&'a mut self, fmt: core::fmt::Arguments<'a>) -> Self::FmtFuture<'a>
+    where
+        Self: 'a;
 }
 
-impl<T: Write + 'static> WriteExt for T {
-    type AllFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a;
-    type FmtFuture<'a> = impl Future<Output = Result<(), Self::Error>> + 'a;
+impl<T: Write> WriteExt for T {
+    #[rustfmt::skip]
+    type AllFuture<'a> where Self: 'a = impl Future<Output = Result<(), Self::Error>> + 'a;
 
-    fn write_all<'a>(&'a mut self, buf: &'a [u8]) -> Self::AllFuture<'a> {
+    #[rustfmt::skip]
+    type FmtFuture<'a> where Self: 'a = impl Future<Output = Result<(), Self::Error>> + 'a;
+
+    fn write_all<'a>(&'a mut self, buf: &'a [u8]) -> Self::AllFuture<'a>
+    where
+        Self: 'a,
+    {
         async move {
             let mut buf = buf;
             while !buf.is_empty() {
@@ -153,7 +201,10 @@ impl<T: Write + 'static> WriteExt for T {
         }
     }
 
-    fn write_fmt<'a>(&'a mut self, fmt: core::fmt::Arguments<'a>) -> Self::FmtFuture<'a> {
+    fn write_fmt<'a>(&'a mut self, fmt: core::fmt::Arguments<'a>) -> Self::FmtFuture<'a>
+    where
+        Self: 'a,
+    {
         async move {
             use alloc::format;
 
@@ -182,6 +233,76 @@ pub trait Serial: Read + Write {
 
     /// Disable the serial port.
     fn disable(&mut self) -> Result<(), <Self as Serial>::Error>;
+}
+
+/// Trait for SPI devices
+pub trait Spi {
+    /// The error type
+    type Error: Debug;
+
+    /// The associated transfer type
+    type Transfer<'a>: SpiTransfer<Error = Self::Error>
+        + Read<Error = Self::Error>
+        + Write<Error = Self::Error>
+        + 'a
+    where
+        Self: 'a;
+
+    /// The Future for starting a transfr
+    type TransferFuture<'a>: Future<Output = Result<Self::Transfer<'a>, Self::Error>> + 'a
+    where
+        Self: 'a;
+
+    /// The future for the `flush()` function
+    type FlushFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a
+    where
+        Self: 'a;
+
+    /// Enable the SPI port
+    fn enable(&mut self) -> Result<(), <Self as Spi>::Error> {
+        self.enable_with_options(&[])
+    }
+
+    /// Enable the SPI port with the selected options
+    fn enable_with_options(&mut self, options: &[SpiOption]) -> Result<(), <Self as Spi>::Error>;
+
+    /// Disable the spi port
+    fn disable(&mut self) -> Result<(), <Self as Spi>::Error>;
+
+    /// Begin a transfer on this SPI port
+    fn transfer<'a>(
+        &'a mut self,
+        baud: usize,
+        cs: usize,
+        packet: usize,
+    ) -> Self::TransferFuture<'a>
+    where
+        Self: 'a;
+
+    /// Flush any outstanding writes to this SPI port
+    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>
+    where
+        Self: 'a;
+}
+
+/// An SPI transfer to or from a device
+pub trait SpiTransfer {
+    /// The error typ
+    type Error: Debug;
+
+    /// The future for a transfer
+    type TransferFuture<'a>: Future<Output = Result<usize, Self::Error>> + 'a
+    where
+        Self: 'a;
+
+    /// Perform a bidirectional SPI transfer
+    fn transfer<'a>(
+        &'a mut self,
+        buf_in: &'a [u8],
+        buf_out: &'a mut [u8],
+    ) -> Self::TransferFuture<'a>
+    where
+        Self: 'a;
 }
 
 /// The serial connection to a host PC
@@ -223,3 +344,7 @@ pub fn serial_5() -> impl DerefMut<Target = impl Serial> {}
 /// The sixth hardware serial port
 #[board_fn(io, teensy_35)]
 pub fn serial_6() -> impl DerefMut<Target = impl Serial> {}
+
+/// The first hardwaer SPI port
+#[board_fn(io, teensy_32)]
+pub fn spi_1() -> impl DerefMut<Target = impl Spi> {}

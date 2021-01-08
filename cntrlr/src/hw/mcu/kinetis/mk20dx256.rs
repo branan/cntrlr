@@ -9,7 +9,7 @@
 
 pub use super::peripheral::mcg::OscRange;
 pub use super::peripheral::osc::Osc;
-pub use super::peripheral::port::{UartRx, UartTx};
+pub use super::peripheral::port::{Cs, Miso, Mosi, Sck, UartRx, UartTx};
 pub use super::peripheral::sim::{PeripheralClockSource, UsbClockSource};
 pub use super::peripheral::wdog::Watchdog;
 

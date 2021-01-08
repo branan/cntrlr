@@ -8,6 +8,7 @@ pub mod osc;
 pub mod port;
 pub mod sim;
 pub mod smc;
+pub mod spi;
 pub mod systick;
 pub mod uart;
 pub mod wdog;
