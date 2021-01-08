@@ -236,6 +236,10 @@ pub trait Serial: Read + Write {
 }
 
 /// Trait for SPI devices
+///
+/// SPI is a synchronous, bidirectional protocol. See
+/// [`SpiTransfer::transfer()`] for details of how this
+/// bidirectionality is handled in the API.
 pub trait Spi {
     /// The error type
     type Error: Debug;
@@ -270,6 +274,11 @@ pub trait Spi {
     fn disable(&mut self) -> Result<(), <Self as Spi>::Error>;
 
     /// Begin a transfer on this SPI port
+    ///
+    /// A transfer is any series of SPI packets to the same device, at
+    /// a single baud rate. The actual baud rate may vary from the one
+    /// requested, and will be the closest possible rate below the
+    /// requested one.
     fn transfer<'a>(
         &'a mut self,
         baud: usize,
@@ -286,8 +295,11 @@ pub trait Spi {
 }
 
 /// An SPI transfer to or from a device
+///
+/// All SPI transfers are bidirectional. See
+/// [`SpiTransfer::transfer()`] for details.
 pub trait SpiTransfer {
-    /// The error typ
+    /// The error type
     type Error: Debug;
 
     /// The future for a transfer
@@ -296,6 +308,14 @@ pub trait SpiTransfer {
         Self: 'a;
 
     /// Perform a bidirectional SPI transfer
+    ///
+    /// SPI transfers are always done in a multiple of the packet
+    /// size. If `buf_in` is below the packet size, the packet will be
+    /// padded with zeroes. If `buf_out` is below the packet size, any
+    /// additional read data will be discarded..
+    ///
+    /// At least one of `buf_in` or `buf_out` must be large enough for
+    /// an entire packet to be written or read, respectively.
     fn transfer<'a>(
         &'a mut self,
         buf_in: &'a [u8],
@@ -345,6 +365,15 @@ pub fn serial_5() -> impl DerefMut<Target = impl Serial> {}
 #[board_fn(io, teensy_35)]
 pub fn serial_6() -> impl DerefMut<Target = impl Serial> {}
 
-/// The first hardwaer SPI port
+/// The first hardware SPI port
+///
+/// Pinouts can vary, but on most boards, the following pinout is
+/// used:
+/// * 11: Data Out
+/// * 12: Data In
+/// * 13: Clock
+///
+/// Some boards support hardware chip selects. See the documentation
+/// for your board for details.
 #[board_fn(io, teensy_32)]
 pub fn spi_1() -> impl DerefMut<Target = impl Spi> {}

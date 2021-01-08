@@ -308,6 +308,12 @@ pub fn serial_3() -> MutexGuard<'static, Serial<Mk20Dx256, Serial3Tx, Serial3Rx,
 }
 
 /// The first hardware spi port
+///
+/// On the Teensy 3.2, the SPI uses the following pins:
+/// * 11: Data Out
+/// * 12: Data In
+/// * 13: Clock
+/// * Hardware chip selects on pins 9, 10, 15, 20, and 21
 pub fn spi_1() -> MutexGuard<'static, Spi<Mk20Dx256, SpiMiso, SpiMosi, SpiSck, SpiCs, 0>> {
     static SPI: Mutex<Spi<Mk20Dx256, SpiMiso, SpiMosi, SpiSck, SpiCs, 0>> = Mutex::new(Spi::new());
     SPI.lock()
