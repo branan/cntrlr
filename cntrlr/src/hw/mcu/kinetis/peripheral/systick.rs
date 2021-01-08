@@ -37,7 +37,7 @@ macro_rules! get {
                         None
                     } else {
                         Some(Self {
-                            regs: &mut *(0x4006_4000 as *mut _),
+                            regs: &mut *(0xE000_E010 as *mut _),
                             _mcu: PhantomData,
                         })
                     }
