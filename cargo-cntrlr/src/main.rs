@@ -571,6 +571,12 @@ fn main() -> Result<()> {
         })
         .unwrap_or_else(|| vec![board.targets[0].to_owned()]);
 
+    if let Some(env_rustflags) = std::env::var("RUSTFLAGS").ok() {
+        std::env::set_var("RUSTLAGS", format!("{} {}", board.rustflags, env_rustflags));
+    } else {
+        std::env::set_var("RUSTFLAGS", board.rustflags);
+    }
+
     let jobs = command_matches
         .value_of("jobs")
         .map(str::parse)

@@ -50,6 +50,9 @@ pub struct Board {
     /// The set of Rust targets for which this board is compatible.
     pub targets: Vec<&'static str>,
 
+    /// Additional rustc flags for this board
+    pub rustflags: &'static str,
+
     /// The preferred method for flashing an image to the board
     pub flash: Flash,
 }
@@ -66,6 +69,7 @@ impl FromStr for Board {
                     "thumbv7m-none-eabi",
                     "thumbv6m-none-eabi",
                 ],
+                rustflags: "-C target-cpu=cortex-m4 -C target-feature=-fpregs",
                 flash: Flash::TeensyLoader,
             }),
             "teensy31" | "teensy32" => Ok(Self {
@@ -76,6 +80,7 @@ impl FromStr for Board {
                     "thumbv7m-none-eabi",
                     "thumbv6m-none-eabi",
                 ],
+                rustflags: "-C target-cpu=cortex-m4 -C target-feature=-fpregs",
                 flash: Flash::TeensyLoader,
             }),
             "teensy35" => Ok(Self {
@@ -87,6 +92,7 @@ impl FromStr for Board {
                     "thumbv7m-none-eabi",
                     "thumbv6m-none-eabi",
                 ],
+                rustflags: "-C target-cpu=cortex-m4",
                 flash: Flash::TeensyLoader,
             }),
             "teensy36" => Ok(Self {
@@ -98,6 +104,7 @@ impl FromStr for Board {
                     "thumbv7m-none-eabi",
                     "thumbv6m-none-eabi",
                 ],
+                rustflags: "-C target-cpu=cortex-m4",
                 flash: Flash::TeensyLoader,
             }),
             "teensy40" | "teensy4" => Ok(Self {
@@ -109,6 +116,7 @@ impl FromStr for Board {
                     "thumbv7m-none-eabi",
                     "thumbv6m-none-eabi",
                 ],
+                rustflags: "-C target-cpu=cortex-m7",
                 flash: Flash::TeensyLoader,
             }),
             "teensy41" => Ok(Self {
@@ -120,18 +128,21 @@ impl FromStr for Board {
                     "thumbv7m-none-eabi",
                     "thumbv6m-none-eabi",
                 ],
+                rustflags: "-C target-cpu=cortex-m7",
                 flash: Flash::TeensyLoader,
             }),
             "teensylc" => Ok(Self {
                 name: "teensy_lc",
                 mcu: "mkl26z64",
                 targets: vec!["thumbv6m-none-eabi"],
+                rustflags: "-C target-cpu=cortex-m0",
                 flash: Flash::TeensyLoader,
             }),
             "arduinouno" => Ok(Self {
                 name: "arduino_uno",
                 mcu: "atmega328p",
-                targets: vec!["avr-none-atmega328"],
+                targets: vec!["avr-none-none"],
+                rustflags: "-C target-cpu=atmega328p",
                 flash: Flash::AvrDude("arduino"),
             }),
             "redv" => Ok(Self {
@@ -142,6 +153,7 @@ impl FromStr for Board {
                     "riscv32imc-unknown-none-elf",
                     "riscv32i-unknown-none-elf",
                 ],
+                rustflags: "-C target-cpu=sifive-e31",
                 flash: Flash::OpenOcd("board/sifive-hifive1-revb.cfg"),
             }),
             _ => Err(()),
