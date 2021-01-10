@@ -298,7 +298,7 @@ where
     C: Cs<M, N>,
 {
     fn cs_allowed(&self, bit: usize) -> bool {
-        self.0.cs_allowed(bit) || self.1.cs_allowed(bit)
+        self.0.cs_allowed(bit) || self.1.cs_allowed(bit) || self.2.cs_allowed(bit)
     }
 }
 
@@ -310,7 +310,10 @@ where
     D: Cs<M, N>,
 {
     fn cs_allowed(&self, bit: usize) -> bool {
-        self.0.cs_allowed(bit) || self.1.cs_allowed(bit)
+        self.0.cs_allowed(bit)
+            || self.1.cs_allowed(bit)
+            || self.2.cs_allowed(bit)
+            || self.3.cs_allowed(bit)
     }
 }
 
@@ -323,7 +326,11 @@ where
     E: Cs<M, N>,
 {
     fn cs_allowed(&self, bit: usize) -> bool {
-        self.0.cs_allowed(bit) || self.1.cs_allowed(bit)
+        self.0.cs_allowed(bit)
+            || self.1.cs_allowed(bit)
+            || self.2.cs_allowed(bit)
+            || self.3.cs_allowed(bit)
+            || self.4.cs_allowed(bit)
     }
 }
 
