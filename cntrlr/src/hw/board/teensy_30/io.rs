@@ -7,7 +7,7 @@ use crate::{
     hw::{
         board::teensy_common::io::{Serial, SerialError, Spi, SpiBoard, SpiError},
         mcu::kinetis::{
-            mk20dx128::{Cs, Miso, Mosi, Pin, Sck, UartRx, UartTx},
+            mk20dx128::{Cs, Pin, Sck, Sdi, Sdo, UartRx, UartTx},
             Mk20Dx128,
         },
     },
@@ -35,11 +35,11 @@ pub type Serial3Rx = UartRx<Pin<'static, 3, 2>>;
 /// The pin used to transmit for serial 3
 pub type Serial3Tx = UartTx<Pin<'static, 3, 3>>;
 
-/// The pin used as MISO for the SPI
-pub type SpiMiso = Miso<Pin<'static, 2, 7>>;
+/// The pin used as SDI for the SPI
+pub type SpiSdi = Sdi<Pin<'static, 2, 7>>;
 
-/// The pin used as MOSI for the SPI
-pub type SpiMosi = Mosi<Pin<'static, 2, 6>>;
+/// The pin used as SDO for the SPI
+pub type SpiSdo = Sdo<Pin<'static, 2, 6>>;
 
 /// The pin used as SCK for the SPI
 pub type SpiSck = Sck<Pin<'static, 2, 5>>;
@@ -194,21 +194,19 @@ impl io::Serial for Serial<Mk20Dx128, Serial3Tx, Serial3Rx, 2> {
     }
 }
 
-impl SpiBoard<SpiMiso, SpiMosi, SpiSck, SpiCs>
-    for Spi<Mk20Dx128, SpiMiso, SpiMosi, SpiSck, SpiCs, 0>
-{
-    fn miso() -> Result<SpiMiso, SpiError> {
+impl SpiBoard<SpiSdi, SpiSdo, SpiSck, SpiCs> for Spi<Mk20Dx128, SpiSdi, SpiSdo, SpiSck, SpiCs, 0> {
+    fn sdi() -> Result<SpiSdi, SpiError> {
         super::digital::port_c()
             .ok_or(SpiError::PortInUse)
             .and_then(|port| port.pin::<7>().ok_or(SpiError::PinInUse))
-            .map(Pin::into_spi_miso)
+            .map(Pin::into_spi_sdi)
     }
 
-    fn mosi() -> Result<SpiMosi, SpiError> {
+    fn sdo() -> Result<SpiSdo, SpiError> {
         super::digital::port_c()
             .ok_or(SpiError::PortInUse)
             .and_then(|port| port.pin::<6>().ok_or(SpiError::PinInUse))
-            .map(Pin::into_spi_mosi)
+            .map(Pin::into_spi_sdo)
     }
 
     fn sck() -> Result<SpiSck, SpiError> {
@@ -314,8 +312,8 @@ pub fn serial_3() -> MutexGuard<'static, Serial<Mk20Dx128, Serial3Tx, Serial3Rx,
 /// * 12: Data In
 /// * 13: Clock
 /// * Hardware chip selects on pins 9, 10, 15, 20, and 21
-pub fn spi_1() -> MutexGuard<'static, Spi<Mk20Dx128, SpiMiso, SpiMosi, SpiSck, SpiCs, 0>> {
-    static SPI: Mutex<Spi<Mk20Dx128, SpiMiso, SpiMosi, SpiSck, SpiCs, 0>> = Mutex::new(Spi::new());
+pub fn spi_1() -> MutexGuard<'static, Spi<Mk20Dx128, SpiSdi, SpiSdo, SpiSck, SpiCs, 0>> {
+    static SPI: Mutex<Spi<Mk20Dx128, SpiSdi, SpiSdo, SpiSck, SpiCs, 0>> = Mutex::new(Spi::new());
     SPI.lock()
 }
 

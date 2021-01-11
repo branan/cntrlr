@@ -29,8 +29,8 @@ struct SpiRegs {
 #[allow(dead_code)]
 pub struct Spi<M, I, O, C, CS, const N: usize> {
     regs: &'static mut SpiRegs,
-    miso: I,
-    mosi: O,
+    sdi: I,
+    sdo: O,
     sck: C,
     cs: CS,
     gate: Gate,
@@ -39,10 +39,10 @@ pub struct Spi<M, I, O, C, CS, const N: usize> {
 
 impl<M, const N: usize> Spi<M, (), (), (), (), N> {
     /// Enable this SPI for operation.
-    pub fn enable<I, O, C, CS>(self, miso: I, mosi: O, sck: C, cs: CS) -> Spi<M, I, O, C, CS, N>
+    pub fn enable<I, O, C, CS>(self, sdi: I, sdo: O, sck: C, cs: CS) -> Spi<M, I, O, C, CS, N>
     where
-        I: Miso<M, N>,
-        O: Mosi<M, N>,
+        I: Sdi<M, N>,
+        O: Sdo<M, N>,
         C: Sck<M, N>,
         CS: Cs<M, N>,
     {
@@ -54,8 +54,8 @@ impl<M, const N: usize> Spi<M, (), (), (), (), N> {
 
         Spi {
             regs: self.regs,
-            miso,
-            mosi,
+            sdi,
+            sdo,
             sck,
             cs,
             gate: self.gate,
@@ -210,7 +210,7 @@ impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N> {
         self.regs.sr.read().get_bits(4..8) as usize
     }
 
-    /// How many frames have been transferred since reset
+    /// How many frames have been transferred sdice reset
     pub fn transfer_count(&self) -> u16 {
         self.regs.tcr.read().get_bits(16..32) as u16
     }
@@ -218,7 +218,7 @@ impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N> {
 
 impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N>
 where
-    O: Mosi<M, N>,
+    O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
 {
@@ -242,7 +242,7 @@ where
 
 impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N>
 where
-    I: Miso<M, N>,
+    I: Sdi<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
 {
@@ -267,10 +267,10 @@ where
 }
 
 /// A pin which is appropriate for use as an SPI input
-pub trait Miso<M, const N: usize>: Unpin {}
+pub trait Sdi<M, const N: usize>: Unpin {}
 
 /// A pin which is appropriate for use as an SPI output
-pub trait Mosi<M, const N: usize>: Unpin {}
+pub trait Sdo<M, const N: usize>: Unpin {}
 
 /// A pin which is appropriate for use as an SPI clock
 pub trait Sck<M, const N: usize>: Unpin {}
@@ -355,8 +355,8 @@ unsafe impl GatedPeripheral<Mk20Dx128> for Spi<Mk20Dx128, (), (), (), (), 0> {
     unsafe fn new(gate: Gate) -> Self {
         Self {
             regs: &mut *(0x4002_C000 as *mut _),
-            miso: (),
-            mosi: (),
+            sdi: (),
+            sdo: (),
             sck: (),
             cs: (),
             gate,
@@ -370,8 +370,8 @@ unsafe impl GatedPeripheral<Mk20Dx256> for Spi<Mk20Dx256, (), (), (), (), 0> {
     unsafe fn new(gate: Gate) -> Self {
         Self {
             regs: &mut *(0x4002_C000 as *mut _),
-            miso: (),
-            mosi: (),
+            sdi: (),
+            sdo: (),
             sck: (),
             cs: (),
             gate,

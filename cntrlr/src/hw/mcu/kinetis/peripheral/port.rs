@@ -145,21 +145,21 @@ impl Pin<'_, Mk20Dx128, 2, 5> {
 
 impl Pin<'_, Mk20Dx128, 2, 6> {
     /// Use this pin as an SPI output
-    pub fn into_spi_mosi(self) -> Mosi<Self> {
+    pub fn into_spi_sdo(self) -> Sdo<Self> {
         self.reg.update(|ctl| {
             ctl.set_bits(8..11, 2);
         });
-        Mosi(self)
+        Sdo(self)
     }
 }
 
 impl Pin<'_, Mk20Dx128, 2, 7> {
     /// Use this pin as an SPI input
-    pub fn into_spi_miso(self) -> Miso<Self> {
+    pub fn into_spi_sdi(self) -> Sdi<Self> {
         self.reg.update(|ctl| {
             ctl.set_bits(8..11, 2);
         });
-        Miso(self)
+        Sdi(self)
     }
 }
 
@@ -281,21 +281,21 @@ impl Pin<'_, Mk20Dx256, 2, 5> {
 
 impl Pin<'_, Mk20Dx256, 2, 6> {
     /// Use this pin as an SPI output
-    pub fn into_spi_mosi(self) -> Mosi<Self> {
+    pub fn into_spi_sdo(self) -> Sdo<Self> {
         self.reg.update(|ctl| {
             ctl.set_bits(8..11, 2);
         });
-        Mosi(self)
+        Sdo(self)
     }
 }
 
 impl Pin<'_, Mk20Dx256, 2, 7> {
     /// Use this pin as an SPI input
-    pub fn into_spi_miso(self) -> Miso<Self> {
+    pub fn into_spi_sdi(self) -> Sdi<Self> {
         self.reg.update(|ctl| {
             ctl.set_bits(8..11, 2);
         });
-        Miso(self)
+        Sdi(self)
     }
 }
 
@@ -648,11 +648,11 @@ pub struct UartTx<P>(P);
 /// A pin which is configured as a GPIO
 pub struct Gpio<P>(P);
 
-/// A pin which is configured as an SPI MOSI
-pub struct Mosi<P>(P);
+/// A pin which is configured as an SPI SDO
+pub struct Sdo<P>(P);
 
-/// A pin which is configured as an SPI MISO
-pub struct Miso<P>(P);
+/// A pin which is configured as an SPI SDI
+pub struct Sdi<P>(P);
 
 /// A pin which is configured as an SPI clock
 pub struct Sck<P>(P);
@@ -754,8 +754,8 @@ impl super::uart::UartTx<Mkl26Z64, 0> for UartTx<Pin<'_, Mkl26Z64, 1, 17>> {}
 impl super::uart::UartTx<Mkl26Z64, 1> for UartTx<Pin<'_, Mkl26Z64, 2, 4>> {}
 impl super::uart::UartTx<Mkl26Z64, 2> for UartTx<Pin<'_, Mkl26Z64, 3, 3>> {}
 
-impl super::spi::Miso<Mk20Dx128, 0> for Miso<Pin<'_, Mk20Dx128, 2, 7>> {}
-impl super::spi::Mosi<Mk20Dx128, 0> for Mosi<Pin<'_, Mk20Dx128, 2, 6>> {}
+impl super::spi::Sdi<Mk20Dx128, 0> for Sdi<Pin<'_, Mk20Dx128, 2, 7>> {}
+impl super::spi::Sdo<Mk20Dx128, 0> for Sdo<Pin<'_, Mk20Dx128, 2, 6>> {}
 impl super::spi::Sck<Mk20Dx128, 0> for Sck<Pin<'_, Mk20Dx128, 2, 5>> {}
 impl super::spi::Cs<Mk20Dx128, 0> for Cs<Pin<'_, Mk20Dx128, 2, 0>> {
     fn cs_allowed(&self, bit: usize) -> bool {
@@ -783,8 +783,8 @@ impl super::spi::Cs<Mk20Dx128, 0> for Cs<Pin<'_, Mk20Dx128, 3, 6>> {
     }
 }
 
-impl super::spi::Miso<Mk20Dx256, 0> for Miso<Pin<'_, Mk20Dx256, 2, 7>> {}
-impl super::spi::Mosi<Mk20Dx256, 0> for Mosi<Pin<'_, Mk20Dx256, 2, 6>> {}
+impl super::spi::Sdi<Mk20Dx256, 0> for Sdi<Pin<'_, Mk20Dx256, 2, 7>> {}
+impl super::spi::Sdo<Mk20Dx256, 0> for Sdo<Pin<'_, Mk20Dx256, 2, 6>> {}
 impl super::spi::Sck<Mk20Dx256, 0> for Sck<Pin<'_, Mk20Dx256, 2, 5>> {}
 impl super::spi::Cs<Mk20Dx256, 0> for Cs<Pin<'_, Mk20Dx256, 2, 0>> {
     fn cs_allowed(&self, bit: usize) -> bool {

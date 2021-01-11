@@ -6,7 +6,7 @@
 use crate::{
     hw::mcu::kinetis::peripheral::{
         sim::{GatedPeripheral, Sim},
-        spi::{self, Cs, Miso, Mosi, Sck},
+        spi::{self, Cs, Sck, Sdi, Sdo},
         uart::{Uart, UartRx, UartTx},
         Peripheral,
     },
@@ -243,8 +243,8 @@ pub struct SpiTransfer<'a, M, I, O, C, CS, const N: usize> {
 
 impl<M, I, O, C, CS, const N: usize> SpiTransfer<'_, M, I, O, C, CS, N>
 where
-    I: Miso<M, N>,
-    O: Mosi<M, N>,
+    I: Sdi<M, N>,
+    O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
@@ -502,8 +502,8 @@ where
 
 impl<M, I, O, C, CS, const N: usize> io::Read for SpiTransfer<'_, M, I, O, C, CS, N>
 where
-    I: Miso<M, N>,
-    O: Mosi<M, N>,
+    I: Sdi<M, N>,
+    O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
@@ -522,8 +522,8 @@ where
 
 impl<M, I, O, C, CS, const N: usize> io::Write for SpiTransfer<'_, M, I, O, C, CS, N>
 where
-    I: Miso<M, N>,
-    O: Mosi<M, N>,
+    I: Sdi<M, N>,
+    O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
@@ -564,8 +564,8 @@ where
 
 impl<M, I, O, C, CS, const N: usize> io::SpiTransfer for SpiTransfer<'_, M, I, O, C, CS, N>
 where
-    I: Miso<M, N>,
-    O: Mosi<M, N>,
+    I: Sdi<M, N>,
+    O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
@@ -600,8 +600,8 @@ impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N> {
 
 impl<M, I, O, C, CS, const N: usize> io::Spi for Spi<M, I, O, C, CS, N>
 where
-    I: Miso<M, N>,
-    O: Mosi<M, N>,
+    I: Sdi<M, N>,
+    O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
     spi::Spi<M, (), (), (), (), N>: GatedPeripheral<M>,
@@ -619,8 +619,8 @@ where
     type FlushFuture<'a> where Self: 'a = impl Future<Output = Result<(), Self::Error>>;
 
     fn enable_with_options(&mut self, options: &[SpiOption]) -> Result<(), Self::Error> {
-        let miso = Self::miso()?;
-        let mosi = Self::mosi()?;
+        let sdi = Self::sdi()?;
+        let sdo = Self::sdo()?;
         let sck = Self::sck()?;
         let cs = Self::cs(options)?;
 
@@ -630,7 +630,7 @@ where
             .ok_or(SpiError::SpiInUse)?;
 
         self.transfer_count = spi.transfer_count();
-        self.spi = Some(spi.enable(miso, mosi, sck, cs));
+        self.spi = Some(spi.enable(sdi, sdo, sck, cs));
         self.wakers = Some(Self::wakers());
         Ok(())
     }
@@ -767,8 +767,8 @@ where
 
 #[allow(missing_docs)]
 pub trait SpiBoard<I, O, C, CS> {
-    fn miso() -> Result<I, SpiError>;
-    fn mosi() -> Result<O, SpiError>;
+    fn sdi() -> Result<I, SpiError>;
+    fn sdo() -> Result<O, SpiError>;
     fn sck() -> Result<C, SpiError>;
     fn cs(options: &[SpiOption]) -> Result<CS, SpiError>;
     fn clock_source() -> usize;
