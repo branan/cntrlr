@@ -86,7 +86,7 @@ pub mod prelude {
     #[prelude_fn(teensy_35)]
     pub use crate::io::serial_6;
 
-    #[prelude_fn(teensy_32)]
+    #[prelude_fn(teensy_30, teensy_32)]
     pub use crate::io::spi_1;
 
     #[prelude_fn(red_v, teensy_30, teensy_32, teensy_35, teensy_36, teensy_lc)]

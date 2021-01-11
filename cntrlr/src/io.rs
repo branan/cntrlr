@@ -375,5 +375,5 @@ pub fn serial_6() -> impl DerefMut<Target = impl Serial> {}
 ///
 /// Some boards support hardware chip selects. See the documentation
 /// for your board for details.
-#[board_fn(io, teensy_32)]
+#[board_fn(io, teensy_30, teensy_32)]
 pub fn spi_1() -> impl DerefMut<Target = impl Spi> {}

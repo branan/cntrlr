@@ -16,7 +16,7 @@ const ERROR: usize = 0;
 
 use cntrlr::prelude::*;
 
-#[cfg(board = "teensy_32")]
+#[cfg(any(board = "teensy_30", board = "teensy_32"))]
 #[entry]
 async fn main() -> ! {
     pin_mode(CHIP_SELECT, PinMode::Output);
@@ -49,7 +49,7 @@ async fn main() -> ! {
     }
 }
 
-#[cfg(not(board = "teensy_32"))]
+#[cfg(not(any(board = "teensy_30", board = "teensy_32")))]
 #[entry]
 async fn main() -> ! {
     core::future::pending().await

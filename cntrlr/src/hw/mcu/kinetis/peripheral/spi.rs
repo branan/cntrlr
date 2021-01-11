@@ -4,7 +4,7 @@
 //! Serial peripheral interface
 
 use super::{
-    super::Mk20Dx256,
+    super::{Mk20Dx128, Mk20Dx256},
     sim::{Gate, GatedPeripheral},
 };
 use crate::register::{Register, Reserved};
@@ -349,6 +349,21 @@ impl<M, const N: usize> Cs<M, N> for () {
     }
 }
 
+unsafe impl GatedPeripheral<Mk20Dx128> for Spi<Mk20Dx128, (), (), (), (), 0> {
+    const GATE: (usize, usize) = (6, 12);
+
+    unsafe fn new(gate: Gate) -> Self {
+        Self {
+            regs: &mut *(0x4002_C000 as *mut _),
+            miso: (),
+            mosi: (),
+            sck: (),
+            cs: (),
+            gate,
+            _mcu: PhantomData,
+        }
+    }
+}
 unsafe impl GatedPeripheral<Mk20Dx256> for Spi<Mk20Dx256, (), (), (), (), 0> {
     const GATE: (usize, usize) = (6, 12);
 

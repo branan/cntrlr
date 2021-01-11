@@ -87,6 +87,16 @@ impl Pin<'_, Mk20Dx128, 1, 17> {
     }
 }
 
+impl Pin<'_, Mk20Dx128, 2, 0> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
+}
+
 impl Pin<'_, Mk20Dx128, 2, 3> {
     /// Use this pin as a UART recieve pin
     pub fn into_uart_rx(self) -> UartRx<Self> {
@@ -94,6 +104,14 @@ impl Pin<'_, Mk20Dx128, 2, 3> {
             ctl.set_bits(8..11, 3);
         });
         UartRx(self)
+    }
+
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
     }
 }
 
@@ -104,6 +122,44 @@ impl Pin<'_, Mk20Dx128, 2, 4> {
             ctl.set_bits(8..11, 3);
         });
         UartTx(self)
+    }
+
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
+}
+
+impl Pin<'_, Mk20Dx128, 2, 5> {
+    /// Use this pin as an SPI clock
+    pub fn into_spi_sck(self) -> Sck<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sck(self)
+    }
+}
+
+impl Pin<'_, Mk20Dx128, 2, 6> {
+    /// Use this pin as an SPI output
+    pub fn into_spi_mosi(self) -> Mosi<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Mosi(self)
+    }
+}
+
+impl Pin<'_, Mk20Dx128, 2, 7> {
+    /// Use this pin as an SPI input
+    pub fn into_spi_miso(self) -> Miso<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Miso(self)
     }
 }
 
@@ -124,6 +180,26 @@ impl Pin<'_, Mk20Dx128, 3, 3> {
             ctl.set_bits(8..11, 3);
         });
         UartTx(self)
+    }
+}
+
+impl Pin<'_, Mk20Dx128, 3, 5> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
+}
+
+impl Pin<'_, Mk20Dx128, 3, 6> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
     }
 }
 
@@ -677,6 +753,35 @@ impl super::uart::UartRx<Mkl26Z64, 2> for UartRx<Pin<'_, Mkl26Z64, 3, 2>> {}
 impl super::uart::UartTx<Mkl26Z64, 0> for UartTx<Pin<'_, Mkl26Z64, 1, 17>> {}
 impl super::uart::UartTx<Mkl26Z64, 1> for UartTx<Pin<'_, Mkl26Z64, 2, 4>> {}
 impl super::uart::UartTx<Mkl26Z64, 2> for UartTx<Pin<'_, Mkl26Z64, 3, 3>> {}
+
+impl super::spi::Miso<Mk20Dx128, 0> for Miso<Pin<'_, Mk20Dx128, 2, 7>> {}
+impl super::spi::Mosi<Mk20Dx128, 0> for Mosi<Pin<'_, Mk20Dx128, 2, 6>> {}
+impl super::spi::Sck<Mk20Dx128, 0> for Sck<Pin<'_, Mk20Dx128, 2, 5>> {}
+impl super::spi::Cs<Mk20Dx128, 0> for Cs<Pin<'_, Mk20Dx128, 2, 0>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 4
+    }
+}
+impl super::spi::Cs<Mk20Dx128, 0> for Cs<Pin<'_, Mk20Dx128, 2, 3>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 1
+    }
+}
+impl super::spi::Cs<Mk20Dx128, 0> for Cs<Pin<'_, Mk20Dx128, 2, 4>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 0
+    }
+}
+impl super::spi::Cs<Mk20Dx128, 0> for Cs<Pin<'_, Mk20Dx128, 3, 5>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 2
+    }
+}
+impl super::spi::Cs<Mk20Dx128, 0> for Cs<Pin<'_, Mk20Dx128, 3, 6>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 3
+    }
+}
 
 impl super::spi::Miso<Mk20Dx256, 0> for Miso<Pin<'_, Mk20Dx256, 2, 7>> {}
 impl super::spi::Mosi<Mk20Dx256, 0> for Mosi<Pin<'_, Mk20Dx256, 2, 6>> {}
