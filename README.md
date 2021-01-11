@@ -1,7 +1,7 @@
 # Cntrlr - Simple, asynchronous embedded
 
 [![Crates.io](https://img.shields.io/crates/v/cntrlr)](https://crates.io/crates/cntrlr)
-[![Crates.io](https://img.shields.io/crates/l/cntrlr)](https://github.com/branan/cntrlr/blob/master/COPYING)
+[![Crates.io](https://img.shields.io/crates/l/cntrlr)](https://github.com/branan/cntrlr/blob/main/COPYING)
 [![Docs.rs](https://docs.rs/cntrlr/badge.svg)](https://docs.rs/cntrlr)
 
 Cntrlr is an all-in-one embedded platform for writing simple
