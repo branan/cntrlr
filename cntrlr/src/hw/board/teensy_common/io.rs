@@ -6,7 +6,7 @@
 use crate::{
     hw::mcu::kinetis::peripheral::{
         sim::{GatedPeripheral, Sim},
-        spi::{self, Cs, Sck, Sdi, Sdo},
+        spi::{self, Cs, Fifo, Sck, Sdi, Sdo},
         uart::{Uart, UartRx, UartTx},
         Peripheral,
     },
@@ -248,6 +248,7 @@ where
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
+    spi::Spi<M, I, O, C, CS, N>: Fifo,
 {
     /// Transfer one or more packets to and from the SPI
     pub async fn transfer(
@@ -454,8 +455,7 @@ where
             trailing_frames = trailing_frames + frames_written - frames_read;
 
             // Ensue we don't desync due to FIFO overrun
-            // TODO query FIFO depth from SPI
-            while trailing_frames > 4 {
+            while trailing_frames > spi.fifo_depth() {
                 if spi.read().is_some() {
                     trailing_frames -= 1;
                     spi.clear_rx_ready();
@@ -507,6 +507,7 @@ where
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
+    spi::Spi<M, I, O, C, CS, N>: Fifo,
 {
     type Error = SpiError;
     #[rustfmt::skip]
@@ -527,6 +528,7 @@ where
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
+    spi::Spi<M, I, O, C, CS, N>: Fifo,
 {
     type Error = SpiError;
     #[rustfmt::skip]
@@ -569,6 +571,7 @@ where
     C: Sck<M, N>,
     CS: Cs<M, N>,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
+    spi::Spi<M, I, O, C, CS, N>: Fifo,
 {
     type Error = SpiError;
     #[rustfmt::skip]
@@ -604,7 +607,8 @@ where
     O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
-    spi::Spi<M, (), (), (), (), N>: GatedPeripheral<M>,
+    spi::Spi<M, (), (), (), (), N>: GatedPeripheral<M> + Fifo,
+    spi::Spi<M, I, O, C, CS, N>: Fifo,
     Sim<M>: Peripheral,
     Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
 {

@@ -4,7 +4,7 @@
 //! Serial peripheral interface
 
 use super::{
-    super::{Mk20Dx128, Mk20Dx256},
+    super::{Mk20Dx128, Mk20Dx256, Mk64Fx512},
     sim::{Gate, GatedPeripheral},
 };
 use crate::register::{Register, Reserved};
@@ -64,7 +64,10 @@ impl<M, const N: usize> Spi<M, (), (), (), (), N> {
     }
 }
 
-impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N> {
+impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N>
+where
+    Spi<M, I, O, C, CS, N>: Fifo,
+{
     /// Read transfer attribute set 0
     pub fn read_ctar0(&self) -> (usize, usize, usize) {
         let ctar = self.regs.ctar0.read();
@@ -200,16 +203,19 @@ impl<M, I, O, C, CS, const N: usize> Spi<M, I, O, C, CS, N> {
         });
     }
 
+    /// How many total entries are available in the FIFOs
+    pub fn fifo_depth(&self) -> usize {
+        <Self as Fifo>::DEPTH
+    }
     /// How many entries are avilable in the TX FIFO
     pub fn tx_fifo_available(&self) -> usize {
-        4 - self.regs.sr.read().get_bits(12..16) as usize
+        self.fifo_depth() - self.regs.sr.read().get_bits(12..16) as usize
     }
 
-    /// How many entries are avilable in the TX FIFO
+    /// How many entries are avilable in the RX FIFO
     pub fn rx_fifo_available(&self) -> usize {
         self.regs.sr.read().get_bits(4..8) as usize
     }
-
     /// How many frames have been transferred sdice reset
     pub fn transfer_count(&self) -> u16 {
         self.regs.tcr.read().get_bits(16..32) as u16
@@ -221,6 +227,7 @@ where
     O: Sdo<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
+    Spi<M, I, O, C, CS, N>: Fifo,
 {
     /// Write one or two bytes to the SPI FIFO
     pub fn write(&mut self, ctar: usize, cs: Option<usize>, hold: bool, data: u16) -> bool {
@@ -245,6 +252,7 @@ where
     I: Sdi<M, N>,
     C: Sck<M, N>,
     CS: Cs<M, N>,
+    Spi<M, I, O, C, CS, N>: Fifo,
 {
     /// Read data from the SPI FIFO
     pub fn read(&mut self) -> Option<u16> {
@@ -264,6 +272,32 @@ where
     pub fn cs_allowed(&self, pin: usize) -> bool {
         self.cs.cs_allowed(pin)
     }
+}
+
+/// Trait for SPI FIFO information
+pub trait Fifo {
+    /// The number of entries the read and write FIFOs can hold
+    const DEPTH: usize;
+}
+
+impl<I, O, C, CS> Fifo for Spi<Mk20Dx128, I, O, C, CS, 0> {
+    const DEPTH: usize = 4;
+}
+
+impl<I, O, C, CS> Fifo for Spi<Mk20Dx256, I, O, C, CS, 0> {
+    const DEPTH: usize = 4;
+}
+
+impl<I, O, C, CS> Fifo for Spi<Mk64Fx512, I, O, C, CS, 0> {
+    const DEPTH: usize = 4;
+}
+
+impl<I, O, C, CS> Fifo for Spi<Mk64Fx512, I, O, C, CS, 1> {
+    const DEPTH: usize = 1;
+}
+
+impl<I, O, C, CS> Fifo for Spi<Mk64Fx512, I, O, C, CS, 2> {
+    const DEPTH: usize = 1;
 }
 
 /// A pin which is appropriate for use as an SPI input
@@ -370,6 +404,54 @@ unsafe impl GatedPeripheral<Mk20Dx256> for Spi<Mk20Dx256, (), (), (), (), 0> {
     unsafe fn new(gate: Gate) -> Self {
         Self {
             regs: &mut *(0x4002_C000 as *mut _),
+            sdi: (),
+            sdo: (),
+            sck: (),
+            cs: (),
+            gate,
+            _mcu: PhantomData,
+        }
+    }
+}
+
+unsafe impl GatedPeripheral<Mk64Fx512> for Spi<Mk64Fx512, (), (), (), (), 0> {
+    const GATE: (usize, usize) = (6, 12);
+
+    unsafe fn new(gate: Gate) -> Self {
+        Self {
+            regs: &mut *(0x4002_C000 as *mut _),
+            sdi: (),
+            sdo: (),
+            sck: (),
+            cs: (),
+            gate,
+            _mcu: PhantomData,
+        }
+    }
+}
+
+unsafe impl GatedPeripheral<Mk64Fx512> for Spi<Mk64Fx512, (), (), (), (), 1> {
+    const GATE: (usize, usize) = (6, 12);
+
+    unsafe fn new(gate: Gate) -> Self {
+        Self {
+            regs: &mut *(0x4002_D000 as *mut _),
+            sdi: (),
+            sdo: (),
+            sck: (),
+            cs: (),
+            gate,
+            _mcu: PhantomData,
+        }
+    }
+}
+
+unsafe impl GatedPeripheral<Mk64Fx512> for Spi<Mk64Fx512, (), (), (), (), 2> {
+    const GATE: (usize, usize) = (6, 12);
+
+    unsafe fn new(gate: Gate) -> Self {
+        Self {
+            regs: &mut *(0x400A_C000 as *mut _),
             sdi: (),
             sdo: (),
             sck: (),

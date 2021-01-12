@@ -347,6 +347,14 @@ impl Pin<'_, Mk64Fx512, 1, 10> {
         });
         UartRx(self)
     }
+
+    /// Use this pin as an SPI Chip Select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
 }
 
 impl Pin<'_, Mk64Fx512, 1, 11> {
@@ -356,6 +364,14 @@ impl Pin<'_, Mk64Fx512, 1, 11> {
             ctl.set_bits(8..11, 3);
         });
         UartTx(self)
+    }
+
+    /// Use this pin as an SPI clock
+    pub fn into_spi_sck(self) -> Sck<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sck(self)
     }
 }
 
@@ -367,6 +383,14 @@ impl Pin<'_, Mk64Fx512, 1, 16> {
         });
         UartRx(self)
     }
+
+    /// Use this pin as an SPI output
+    pub fn into_spi_sdo(self) -> Sdo<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sdo(self)
+    }
 }
 
 impl Pin<'_, Mk64Fx512, 1, 17> {
@@ -376,6 +400,64 @@ impl Pin<'_, Mk64Fx512, 1, 17> {
             ctl.set_bits(8..11, 3);
         });
         UartTx(self)
+    }
+
+    /// Use this pin as an SPI input
+    pub fn into_spi_sdi(self) -> Sdi<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sdi(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 1, 20> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 1, 21> {
+    /// Use this pin as an SPI clock
+    pub fn into_spi_sck(self) -> Sck<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sck(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 1, 22> {
+    /// Use this pin as an SPI output
+    pub fn into_spi_sdo(self) -> Sdo<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sdo(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 1, 23> {
+    /// Use this pin as an SPI input
+    pub fn into_spi_sdi(self) -> Sdi<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sdi(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 2, 0> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
     }
 }
 
@@ -387,6 +469,14 @@ impl Pin<'_, Mk64Fx512, 2, 3> {
         });
         UartRx(self)
     }
+
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
 }
 
 impl Pin<'_, Mk64Fx512, 2, 4> {
@@ -396,6 +486,44 @@ impl Pin<'_, Mk64Fx512, 2, 4> {
             ctl.set_bits(8..11, 3);
         });
         UartTx(self)
+    }
+
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 2, 5> {
+    /// Use this pin as an SPI clock
+    pub fn into_spi_sck(self) -> Sck<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sck(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 2, 6> {
+    /// Use this pin as an SPI output
+    pub fn into_spi_sdo(self) -> Sdo<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sdo(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 2, 7> {
+    /// Use this pin as an SPI input
+    pub fn into_spi_sdi(self) -> Sdi<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Sdi(self)
     }
 }
 
@@ -416,6 +544,26 @@ impl Pin<'_, Mk64Fx512, 3, 3> {
             ctl.set_bits(8..11, 3);
         });
         UartTx(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 3, 5> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 3, 6> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
     }
 }
 
@@ -446,6 +594,16 @@ impl Pin<'_, Mk64Fx512, 4, 24> {
             ctl.set_bits(8..11, 3);
         });
         UartTx(self)
+    }
+}
+
+impl Pin<'_, Mk64Fx512, 3, 15> {
+    /// Use this pin as an SPI chip select
+    pub fn into_spi_cs(self) -> Cs<Self> {
+        self.reg.update(|ctl| {
+            ctl.set_bits(8..11, 2);
+        });
+        Cs(self)
     }
 }
 
@@ -809,6 +967,56 @@ impl super::spi::Cs<Mk20Dx256, 0> for Cs<Pin<'_, Mk20Dx256, 3, 5>> {
 impl super::spi::Cs<Mk20Dx256, 0> for Cs<Pin<'_, Mk20Dx256, 3, 6>> {
     fn cs_allowed(&self, bit: usize) -> bool {
         bit == 3
+    }
+}
+
+impl super::spi::Sdi<Mk64Fx512, 1> for Sdi<Pin<'_, Mk64Fx512, 1, 17>> {}
+impl super::spi::Sdi<Mk64Fx512, 2> for Sdi<Pin<'_, Mk64Fx512, 1, 23>> {}
+impl super::spi::Sdi<Mk64Fx512, 0> for Sdi<Pin<'_, Mk64Fx512, 2, 7>> {}
+impl super::spi::Sdo<Mk64Fx512, 1> for Sdo<Pin<'_, Mk64Fx512, 1, 16>> {}
+impl super::spi::Sdo<Mk64Fx512, 2> for Sdo<Pin<'_, Mk64Fx512, 1, 22>> {}
+impl super::spi::Sdo<Mk64Fx512, 0> for Sdo<Pin<'_, Mk64Fx512, 2, 6>> {}
+impl super::spi::Sck<Mk64Fx512, 1> for Sck<Pin<'_, Mk64Fx512, 1, 11>> {}
+impl super::spi::Sck<Mk64Fx512, 2> for Sck<Pin<'_, Mk64Fx512, 1, 21>> {}
+impl super::spi::Sck<Mk64Fx512, 0> for Sck<Pin<'_, Mk64Fx512, 2, 5>> {}
+impl super::spi::Cs<Mk64Fx512, 1> for Cs<Pin<'_, Mk64Fx512, 1, 10>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 0
+    }
+}
+impl super::spi::Cs<Mk64Fx512, 2> for Cs<Pin<'_, Mk64Fx512, 1, 20>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 0
+    }
+}
+impl super::spi::Cs<Mk64Fx512, 0> for Cs<Pin<'_, Mk64Fx512, 2, 0>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 4
+    }
+}
+impl super::spi::Cs<Mk64Fx512, 0> for Cs<Pin<'_, Mk64Fx512, 2, 3>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 1
+    }
+}
+impl super::spi::Cs<Mk64Fx512, 0> for Cs<Pin<'_, Mk64Fx512, 2, 4>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 0
+    }
+}
+impl super::spi::Cs<Mk64Fx512, 0> for Cs<Pin<'_, Mk64Fx512, 3, 5>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 2
+    }
+}
+impl super::spi::Cs<Mk64Fx512, 0> for Cs<Pin<'_, Mk64Fx512, 3, 6>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 3
+    }
+}
+impl super::spi::Cs<Mk64Fx512, 2> for Cs<Pin<'_, Mk64Fx512, 3, 15>> {
+    fn cs_allowed(&self, bit: usize) -> bool {
+        bit == 1
     }
 }
 
