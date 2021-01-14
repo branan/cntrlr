@@ -149,7 +149,7 @@ pub unsafe extern "C" fn init() {
 
     // TODO: Create an NVIC peripheral
     const NVIC_ISER: *mut u32 = 0xE000_E100 as *mut _;
-    for intr in &[31, 33, 35, 37, 66, 68] {
+    for intr in &[26, 27, 31, 33, 35, 37, 65, 66, 68] {
         let reg = intr / 32;
         let bit = intr % 32;
 
@@ -192,8 +192,8 @@ pub static INTERRUPTS: [unsafe extern "C" fn(); 100] = [
     unused_interrupt,  // 023
     unused_interrupt,  // 024
     unused_interrupt,  // 025
-    unused_interrupt,  // 026
-    unused_interrupt,  // 027
+    io::spi_1_intr,    // 026
+    io::spi_2_intr,    // 027
     unused_interrupt,  // 028
     unused_interrupt,  // 029
     unused_interrupt,  // 030
@@ -231,7 +231,7 @@ pub static INTERRUPTS: [unsafe extern "C" fn(); 100] = [
     unused_interrupt,  // 062
     unused_interrupt,  // 063
     unused_interrupt,  // 064
-    unused_interrupt,  // 065
+    io::spi_3_intr,    // 065
     io::serial_5_intr, // 066
     unused_interrupt,  // 067
     unused_interrupt,  // 068

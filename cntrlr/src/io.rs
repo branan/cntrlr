@@ -375,13 +375,13 @@ pub fn serial_6() -> impl DerefMut<Target = impl Serial> {}
 ///
 /// Some boards support hardware chip selects. See the documentation
 /// for your board for details.
-#[board_fn(io, teensy_30, teensy_32, teensy_35)]
+#[board_fn(io, teensy_30, teensy_32, teensy_35, teensy_36)]
 pub fn spi_1() -> impl DerefMut<Target = impl Spi> {}
 
 /// The second hardware SPI port
-#[board_fn(io, teensy_35)]
+#[board_fn(io, teensy_35, teensy_36)]
 pub fn spi_2() -> impl DerefMut<Target = impl Spi> {}
 
 /// The third hardware SPI port
-#[board_fn(io, teensy_35)]
+#[board_fn(io, teensy_35, teensy_36)]
 pub fn spi_3() -> impl DerefMut<Target = impl Spi> {}

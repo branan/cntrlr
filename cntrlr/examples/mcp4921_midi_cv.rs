@@ -94,7 +94,7 @@ async fn write_note<S: Spi>(spi: &mut S, pitch: u8, velocity: u8) -> Result<(), 
     Ok(())
 }
 
-#[cfg(any(board = "teensy_30", board = "teensy_32", board = "teensy_35"))]
+#[cfg(not(any(board = "teensy_lc", board = "red_v")))]
 #[entry]
 async fn main() -> ! {
     serial_1()
@@ -136,7 +136,7 @@ async fn main() -> ! {
     }
 }
 
-#[cfg(not(any(board = "teensy_30", board = "teensy_32", board = "teensy_35")))]
+#[cfg(any(board = "teensy_lc", board = "red_v"))]
 #[entry]
 async fn main() -> ! {
     core::future::pending().await

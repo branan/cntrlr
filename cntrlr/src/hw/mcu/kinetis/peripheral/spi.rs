@@ -4,7 +4,7 @@
 //! Serial peripheral interface
 
 use super::{
-    super::{Mk20Dx128, Mk20Dx256, Mk64Fx512},
+    super::{Mk20Dx128, Mk20Dx256, Mk64Fx512, Mk66Fx1M0},
     sim::{Gate, GatedPeripheral},
 };
 use crate::register::{Register, Reserved};
@@ -300,6 +300,18 @@ impl<I, O, C, CS> Fifo for Spi<Mk64Fx512, I, O, C, CS, 2> {
     const DEPTH: usize = 1;
 }
 
+impl<I, O, C, CS> Fifo for Spi<Mk66Fx1M0, I, O, C, CS, 0> {
+    const DEPTH: usize = 4;
+}
+
+impl<I, O, C, CS> Fifo for Spi<Mk66Fx1M0, I, O, C, CS, 1> {
+    const DEPTH: usize = 1;
+}
+
+impl<I, O, C, CS> Fifo for Spi<Mk66Fx1M0, I, O, C, CS, 2> {
+    const DEPTH: usize = 1;
+}
+
 /// A pin which is appropriate for use as an SPI input
 pub trait Sdi<M, const N: usize>: Unpin {}
 
@@ -447,6 +459,54 @@ unsafe impl GatedPeripheral<Mk64Fx512> for Spi<Mk64Fx512, (), (), (), (), 1> {
 }
 
 unsafe impl GatedPeripheral<Mk64Fx512> for Spi<Mk64Fx512, (), (), (), (), 2> {
+    const GATE: (usize, usize) = (6, 12);
+
+    unsafe fn new(gate: Gate) -> Self {
+        Self {
+            regs: &mut *(0x400A_C000 as *mut _),
+            sdi: (),
+            sdo: (),
+            sck: (),
+            cs: (),
+            gate,
+            _mcu: PhantomData,
+        }
+    }
+}
+
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Spi<Mk66Fx1M0, (), (), (), (), 0> {
+    const GATE: (usize, usize) = (6, 12);
+
+    unsafe fn new(gate: Gate) -> Self {
+        Self {
+            regs: &mut *(0x4002_C000 as *mut _),
+            sdi: (),
+            sdo: (),
+            sck: (),
+            cs: (),
+            gate,
+            _mcu: PhantomData,
+        }
+    }
+}
+
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Spi<Mk66Fx1M0, (), (), (), (), 1> {
+    const GATE: (usize, usize) = (6, 12);
+
+    unsafe fn new(gate: Gate) -> Self {
+        Self {
+            regs: &mut *(0x4002_D000 as *mut _),
+            sdi: (),
+            sdo: (),
+            sck: (),
+            cs: (),
+            gate,
+            _mcu: PhantomData,
+        }
+    }
+}
+
+unsafe impl GatedPeripheral<Mk66Fx1M0> for Spi<Mk66Fx1M0, (), (), (), (), 2> {
     const GATE: (usize, usize) = (6, 12);
 
     unsafe fn new(gate: Gate) -> Self {
