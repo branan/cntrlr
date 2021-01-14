@@ -500,7 +500,7 @@ where
     }
 }
 
-impl<M, I, O, C, CS, const N: usize> io::Read for SpiTransfer<'_, M, I, O, C, CS, N>
+impl<M, I, O, C, CS, const N: usize> io::SpiTransfer for SpiTransfer<'_, M, I, O, C, CS, N>
 where
     I: Sdi<M, N>,
     O: Sdo<M, N>,
@@ -511,37 +511,19 @@ where
 {
     type Error = SpiError;
     #[rustfmt::skip]
-    type Future<'a> where Self: 'a = impl Future<Output = Result<usize, Self::Error>> + 'a;
-
-    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::Future<'a>
-    where
-        Self: 'a,
-    {
-        self.transfer(&[], buf)
-    }
-}
-
-impl<M, I, O, C, CS, const N: usize> io::Write for SpiTransfer<'_, M, I, O, C, CS, N>
-where
-    I: Sdi<M, N>,
-    O: Sdo<M, N>,
-    C: Sck<M, N>,
-    CS: Cs<M, N>,
-    Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
-    spi::Spi<M, I, O, C, CS, N>: Fifo,
-{
-    type Error = SpiError;
-    #[rustfmt::skip]
-    type Future<'a> where Self: 'a = impl Future<Output = Result<usize, Self::Error>> + 'a;
-
+    type TransferFuture<'a> where Self: 'a = impl Future<Output = Result<usize, Self::Error>> + 'a;
     #[rustfmt::skip]
     type FlushFuture<'a> where Self: 'a = impl Future<Output = Result<(), Self::Error>> + 'a;
 
-    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::Future<'a>
+    fn transfer<'a>(
+        &'a mut self,
+        buf_in: &'a [u8],
+        buf_out: &'a mut [u8],
+    ) -> Self::TransferFuture<'a>
     where
         Self: 'a,
     {
-        self.transfer(buf, &mut [])
+        self.transfer(buf_in, buf_out)
     }
 
     fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>
@@ -561,31 +543,6 @@ where
                 Poll::Pending
             }
         })
-    }
-}
-
-impl<M, I, O, C, CS, const N: usize> io::SpiTransfer for SpiTransfer<'_, M, I, O, C, CS, N>
-where
-    I: Sdi<M, N>,
-    O: Sdo<M, N>,
-    C: Sck<M, N>,
-    CS: Cs<M, N>,
-    Spi<M, I, O, C, CS, N>: SpiBoard<I, O, C, CS>,
-    spi::Spi<M, I, O, C, CS, N>: Fifo,
-{
-    type Error = SpiError;
-    #[rustfmt::skip]
-    type TransferFuture<'a> where Self: 'a = impl Future<Output = Result<usize, Self::Error>> + 'a;
-
-    fn transfer<'a>(
-        &'a mut self,
-        buf_in: &'a [u8],
-        buf_out: &'a mut [u8],
-    ) -> Self::TransferFuture<'a>
-    where
-        Self: 'a,
-    {
-        self.transfer(buf_in, buf_out)
     }
 }
 

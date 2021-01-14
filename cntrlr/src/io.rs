@@ -307,6 +307,11 @@ pub trait SpiTransfer {
     where
         Self: 'a;
 
+    /// The future for the `flush()` function
+    type FlushFuture<'a>: Future<Output = Result<(), Self::Error>> + 'a
+    where
+        Self: 'a;
+
     /// Perform a bidirectional SPI transfer
     ///
     /// SPI transfers are always done in a multiple of the packet
@@ -323,6 +328,58 @@ pub trait SpiTransfer {
     ) -> Self::TransferFuture<'a>
     where
         Self: 'a;
+
+    /// Flush any outstanding writes from this SPI transfer
+    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>
+    where
+        Self: 'a;
+}
+
+impl<T> Read for T
+where
+    T: SpiTransfer,
+{
+    type Error = <Self as SpiTransfer>::Error;
+    type Future<'a>
+    where
+        Self: 'a,
+    = <Self as SpiTransfer>::TransferFuture<'a>;
+
+    fn read<'a>(&'a mut self, buf: &'a mut [u8]) -> Self::Future<'a>
+    where
+        Self: 'a,
+    {
+        <Self as SpiTransfer>::transfer(self, &[], buf)
+    }
+}
+
+impl<T> Write for T
+where
+    T: SpiTransfer,
+{
+    type Error = <Self as SpiTransfer>::Error;
+    type Future<'a>
+    where
+        Self: 'a,
+    = <Self as SpiTransfer>::TransferFuture<'a>;
+    type FlushFuture<'a>
+    where
+        Self: 'a,
+    = <Self as SpiTransfer>::FlushFuture<'a>;
+
+    fn write<'a>(&'a mut self, buf: &'a [u8]) -> Self::Future<'a>
+    where
+        Self: 'a,
+    {
+        <Self as SpiTransfer>::transfer(self, buf, &mut [])
+    }
+
+    fn flush<'a>(&'a mut self) -> Self::FlushFuture<'a>
+    where
+        Self: 'a,
+    {
+        <Self as SpiTransfer>::flush(self)
+    }
 }
 
 /// The serial connection to a host PC
